@@ -1,19 +1,32 @@
+class snakePart{
+    constructor(x, y){
+        this.x=x;
+        this.y=y;
+    }
+}
+
 const canvas=document.getElementById('game');
 const ctx=canvas.getContext('2d');
-//increase snake size 
-class snakePart{
-constructor(x, y){
-    this.x=x;
-    this.y=y;
-}
-}
 
 // Settings
-let solidWalls = false;
+//General
+let sameTeam = false;
+let TouchControls = false;
 let speed = 12;
+let canvasSize = 400;
+//GameOver
+let lives = 1;
+let solidWalls = false;
 let WinningScore = 25;
+//Color
+let snake1HeadColor = "orange";
+let snake1BodyColor = "green";
+let snake2HeadColor = "yellow";
+let snake2BodyColor = "blue";
 
-let tileCount = 20;
+canvas.width = canvasSize;
+canvas.height = canvasSize;
+let tileCount = canvasSize/20;
 
 let tileSize=canvas.clientWidth/tileCount-2;
 
@@ -186,13 +199,13 @@ function isGameOver(){
      }
      else if(score > score2)
      {
-     	ctx.fillStyle="orange";
+     	ctx.fillStyle=snake1HeadColor;
     	ctx.font="36px verdana";
     	ctx.fillText("Player 1 Wins!", canvas.clientWidth/5.5, canvas.clientHeight/2 + 50);
      }
      else
      {
-     	ctx.fillStyle="yellow";
+     	ctx.fillStyle=snake2HeadColor;
     	ctx.font="36px verdana";
     	ctx.fillText("Player 2 Wins", canvas.clientWidth/5.5, canvas.clientHeight/2 + 50);
      }
@@ -203,14 +216,14 @@ function isGameOver(){
 
 // score function
 function drawScore(){
-ctx.fillStyle="orange"// set our text color to white
+ctx.fillStyle=snake1HeadColor// set our text color to white
 ctx.font="10px verdena"//set font size to 10px of font family verdena
 ctx.fillText("Player1: " +score, 10,10);// position our score at right hand corner 
 }
 
 // score2 function
 function drawScore2(){
-ctx.fillStyle="yellow"// set our text color to white
+ctx.fillStyle=snake2HeadColor// set our text color to white
 ctx.font="10px verdena"//set font size to 10px of font family verdena
 ctx.fillText("Player2: " +score2, canvas.clientWidth-50, 10);// position our score at right hand corner 
 }
@@ -224,7 +237,7 @@ ctx.fillRect(0,0,canvas.clientWidth,canvas.clientHeight)// black color start fro
  
  function drawSnake(){
     
-    ctx.fillStyle='green';
+    ctx.fillStyle=snake1BodyColor;
     
     //loop through our snakeparts array
     for(let i=0;i<snakeParts.length;i++){
@@ -239,7 +252,7 @@ ctx.fillRect(0,0,canvas.clientWidth,canvas.clientHeight)// black color start fro
     if(snakeParts.length>tailLength){
         snakeParts.shift();//remove furthest item from  snake part if we have more than our tail size
     }
-    ctx.fillStyle="orange";
+    ctx.fillStyle=snake1HeadColor;
     ctx.fillRect(headX* tileCount,headY* tileCount, tileSize,tileSize)
  }
  
@@ -250,7 +263,7 @@ ctx.fillRect(0,0,canvas.clientWidth,canvas.clientHeight)// black color start fro
  
   function drawSnake2(){
     
-    ctx.fillStyle='blue';
+    ctx.fillStyle=snake2BodyColor;
     
     //loop through our snakeparts array
     for(let i=0;i<snake2Parts.length;i++){
@@ -265,7 +278,7 @@ ctx.fillRect(0,0,canvas.clientWidth,canvas.clientHeight)// black color start fro
     if(snake2Parts.length>tail2Length){
         snake2Parts.shift();//remove furthest item from  snake part if we have more than our tail size
     }
-    ctx.fillStyle="yellow";
+    ctx.fillStyle=snake2HeadColor;
     ctx.fillRect(head2X* tileCount,head2Y* tileCount, tileSize,tileSize)
  }
  
@@ -304,8 +317,7 @@ ctx.fillRect(0,0,canvas.clientWidth,canvas.clientHeight)// black color start fro
  {
  	if(event.keyCode==13)
     {
-    	Window.location.reload();
-    	drawGame();
+        location.reload();
     }
  }
 
