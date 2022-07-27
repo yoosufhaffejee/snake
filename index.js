@@ -443,8 +443,10 @@ function keyDown()
     {
         event.preventDefault();
         reset();
-        drawGame();
-        //location.reload();
+        clearScreen();
+        appleX = -5;
+        appleY = -5;
+        return;
     }
 
     /*
