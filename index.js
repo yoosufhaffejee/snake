@@ -22,39 +22,40 @@ class snakePart{
 
 const canvas=document.getElementById('game');
 const ctx=canvas.getContext('2d');
+// Get the modal
+const modal = document.getElementById("myModal");
+// Get text content
+const modalText = document.getElementById("modalText");
+const btn = document.getElementById("btnAdd");
+
+// Temp var to store the keys entered in popup
+let keys = [];
 
 // Settings
 //General
 let sameTeam = false;
 let TouchControls = false;
 let speed = 12;
-let canvasSize = 400;
+let canvasSize = 600;
 //GameOver
 let lives = 1;
 let solidWalls = false;
 let WinningScore = 25;
 //Players
-//Color
-let snake1HeadColor = "orange";
-let snake1BodyColor = "green";
-let snake2HeadColor = "yellow";
-let snake2BodyColor = "blue";
+let playerCount = 0;
 
-let custom1 = [];
-let custom2 = [];
-let custom3 = [];
-let custom4 = [];
-let custom5 = [];
-let custom6 = [];
+//Controls
+//2D Array
+let buttonMappings = [];
 
 canvas.width = canvasSize;
 canvas.height = canvasSize;
-let tileCount = canvasSize/20;
+let tileCount = canvasSize/24;
 
-let tileSize=canvasSize/tileCount;
+let tileSize=canvasSize/tileCount-2;
 
-let snake1 = new snake("Player1", "charcoal", snake1BodyColor, 5, 10, [], 1, 0, 0, 0);
-let snake2 = new snake("Player2", snake2HeadColor, snake2BodyColor, 15, 10, [], 1, 0, 0, 0);
+let snake1 = new snake("Player1", "orange", "green", 5, 10, [], 1, 0, 0, 0);
+let snake2 = new snake("Player2", "yellow", "blue", 15, 10, [], 1, 0, 0, 0);
 let snake3 = new snake("Player3", "purple", "lime", 5, 5, [], 1, 0, 0, 0);
 let snake4 = new snake("Player4", "pink", "cyan", 15, 5, [], 1, 0, 0, 0);
 let snake5 = new snake("Player5", "tan", "lavender", 10, 5, [], 1, 0, 0, 0);
@@ -63,19 +64,41 @@ let snake7 = new snake("Player7", "#FFFDD0", "navy", 5, 15, [], 1, 0, 0, 0);
 let snake8 = new snake("Player8", "teal", "silver", 15, 15, [], 1, 0, 0, 0);
 
 let AllSnakes = [snake1, snake2, snake3, snake4, snake5, snake6, snake7, snake8];
-let snakes = [snake1, snake2];
-//snakes = AllSnakes;
+let snakes = [];
 
 //draw apple
 let appleX;
 let appleY;
 
-//scores
-let score=0;
-let score2=0;
-
 let started = false;
 let AppleInitialized = false;
+let GameOverText = false;
+
+function reset()
+{
+    lives = 1;
+    keys = [];
+    started = false;
+    AppleInitialized = false;
+    GameOverText = false;
+
+    snake1 = new snake("Player1", "orange", "green", 5, 10, [], 1, 0, 0, 0);
+    snake2 = new snake("Player2", "yellow", "blue", 15, 10, [], 1, 0, 0, 0);
+    snake3 = new snake("Player3", "purple", "lime", 5, 5, [], 1, 0, 0, 0);
+    snake4 = new snake("Player4", "pink", "cyan", 15, 5, [], 1, 0, 0, 0);
+    snake5 = new snake("Player5", "tan", "lavender", 10, 5, [], 1, 0, 0, 0);
+    snake6 = new snake("Player6", "#FF7F50", "#36454F", 10, 15, [], 1, 0, 0, 0);
+    snake7 = new snake("Player7", "#FFFDD0", "navy", 5, 15, [], 1, 0, 0, 0);
+    snake8 = new snake("Player8", "teal", "silver", 15, 15, [], 1, 0, 0, 0);
+
+    AllSnakes = [snake1, snake2, snake3, snake4, snake5, snake6, snake7, snake8];
+
+    let oldSnakes = snakes.length;
+    snakes = [];
+    for (let index = 0; index < oldSnakes; index++) {
+        snakes.push(AllSnakes[index]);
+    }
+}
 
 // create game loop-to continously update screen
 function drawGame(){
@@ -172,8 +195,59 @@ function isGameOver(){
     return gameOver;
 }
 
+function addSnake()
+{
+    if(playerCount >= 8)
+    {
+        alert("Max players allowed is 8");
+    }
+    else if(started === false && GameOverText === false)
+    {
+        // Show initial popup
+        modalText.textContent = AllSnakes[playerCount].name + ": Tap key to bind 'Move Up'"
+        modal.style.display = "block";
+    }
+}
+
+document.addEventListener('keyup', setControls);
+
+function setControls(e)
+{
+    if(modal.style.display == "block")
+    {
+        keys.push(e.keyCode);
+
+        if(keys.length === 1)
+        {
+            modalText.textContent = AllSnakes[playerCount].name + ": Tap key to bind 'Move Down'"
+        }
+
+        if(keys.length === 2)
+        {
+            modalText.textContent = AllSnakes[playerCount].name + ": Tap key to bind 'Move Left'"
+        }
+
+        if(keys.length === 3)
+        {
+            modalText.textContent = AllSnakes[playerCount].name + ": Tap key to bind 'Move Right'"
+        }
+
+        if(keys.length === 4)
+        {
+            snakes.push(AllSnakes[playerCount]);
+            playerCount++;
+
+            buttonMappings.push(keys);
+            keys = [];
+            modal.style.display = "none"
+        }
+    }
+}
+
 function displayGameOverText(snakes, Gameover)
 {
+    GameOverText = true;
+
     // Game Over Text
     ctx.fillStyle="white";
     ctx.font="50px verdana";
@@ -336,7 +410,7 @@ function drawScore(){
  }
  
  function drawApple(){
-    if(started && !AppleInitialized)
+    if(started === true && AppleInitialized === false)
     {
     	appleX = 10;
     	appleY = 10;
@@ -361,18 +435,19 @@ function drawScore(){
  
  //add event listener to our body
  document.body.addEventListener('keydown', keyDown);
- document.body.addEventListener('keypress', reset);
- 
- function reset()
- {
- 	if(event.keyCode==13)
-    {
-        location.reload();
-    }
- }
 
 function keyDown()
 {
+    //Enter to Reset Game
+    if(event.keyCode==13)
+    {
+        event.preventDefault();
+        reset();
+        drawGame();
+        //location.reload();
+    }
+
+    /*
     //Arrows
 	// Arrow Up
     if(event.keyCode==38){
@@ -393,8 +468,8 @@ function keyDown()
     if(event.keyCode==39){
     	moveRight(snake2);
     }
-    
-    //WASD
+
+        //WASD
     // W - up
     if(event.keyCode==87){
     	moveUp(snake1);
@@ -414,35 +489,30 @@ function keyDown()
     if(event.keyCode==68){
     	moveRight(snake1);
     }
+    */
 
+    for (let i = 0; i < snakes.length; i++) {
+        customMovement(snakes[i], buttonMappings[i]);        
+    }
 
-    //Custom1
-    customMovement(snake3, custom1);
-    //Custom2
-    customMovement(snake4, custom2);
-    //Custom3
-    customMovement(snake5, custom3);
-    //Custom4
-    customMovement(snake6, custom4);
-    //Custom5
-    customMovement(snake7, custom5);
-    //Custom6
-    customMovement(snake8, custom6);
 }
 
 function customMovement(snake, controls)
 {
-    if(event.keyCode==controls[0]){
-    	moveUp(snake);
-    }
-    if(event.keyCode==controls[1]){
-    	moveDown(snake);
-    }
-    if(event.keyCode==controls[2]){
-    	moveLeft(snake);
-    }
-    if(event.keyCode==controls[3]){
-    	moveRight(snake);
+    if(controls != null)
+    {
+        if(event.keyCode==controls[0]){
+            moveUp(snake);
+        }
+        if(event.keyCode==controls[1]){
+            moveDown(snake);
+        }
+        if(event.keyCode==controls[2]){
+            moveLeft(snake);
+        }
+        if(event.keyCode==controls[3]){
+            moveRight(snake);
+        }
     }
 }
 
@@ -482,6 +552,24 @@ document.addEventListener('touchstart', handleTouchStart, false);
 document.addEventListener('touchmove', handleTouchMove, false);
 
 // Touch
+function isTouchDevice() {
+    return (('ontouchstart' in window) ||
+       (navigator.maxTouchPoints > 0) ||
+       (navigator.msMaxTouchPoints > 0));
+}
+
+function InitP1Controls()
+{
+    buttonMappings.push([87, 83, 65, 68]);
+    snakes.push(AllSnakes[playerCount]);
+    playerCount++;
+}
+
+if(isTouchDevice() === true)
+{
+    InitP1Controls();
+}
+
 var xDown = null;                                                        
 var yDown = null;
 
@@ -496,32 +584,32 @@ function handleTouchStart(evt) {
 };
 
 function handleTouchMove(evt) {
-    if ( ! xDown || ! yDown ) {
-    	return;
+    if (!xDown || !yDown) {
+        return;
     }
 
-    var xUp = evt.touches[0].clientX;                                    
+    var xUp = evt.touches[0].clientX;
     var yUp = evt.touches[0].clientY;
 
     var xDiff = xDown - xUp;
     var yDiff = yDown - yUp;
-                                                                         
-    if ( Math.abs( xDiff ) > Math.abs( yDiff ) ) {/*most significant*/
-        if ( xDiff > 0 ) {
-           moveLeft(snake.xVelocity, snake.yVelocity);
+
+    if (Math.abs(xDiff) > Math.abs(yDiff)) {/*most significant*/
+        if (xDiff > 0) {
+            moveLeft(snake.xVelocity, snake.yVelocity);
         } else {
             moveRight(snake.xVelocity, snake.yVelocity);
-        }                       
+        }
     } else {
-        if ( yDiff > 0 ) {
+        if (yDiff > 0) {
             moveUp(snake.xVelocity, snake.yVelocity);
-        } else { 
+        } else {
             moveDown(snake.xVelocity, snake.yVelocity);
-        }                                                                 
+        }
     }
     /* reset values */
     xDown = null;
-    yDown = null;                                             
+    yDown = null;
 };
 
  drawGame(); 
