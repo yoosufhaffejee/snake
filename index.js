@@ -28,7 +28,7 @@ const ctx=canvas.getContext('2d');
 let sameTeam = false;
 let TouchControls = false;
 let speed = 12;
-let canvasSize = 600;
+let canvasSize = 400;
 //GameOver
 let lives = 1;
 let solidWalls = false;
@@ -42,18 +42,29 @@ let snake2BodyColor = "blue";
 
 let custom1 = [];
 let custom2 = [];
+let custom3 = [];
+let custom4 = [];
+let custom5 = [];
+let custom6 = [];
+
 canvas.width = canvasSize;
 canvas.height = canvasSize;
-let tileCount = canvasSize/24;
+let tileCount = canvasSize/20;
 
 let tileSize=canvasSize/tileCount;
 
-let snake1 = new snake("Player1", snake1HeadColor, snake1BodyColor, 5, 10, [], 1, 0, 0, 0);
+let snake1 = new snake("Player1", "charcoal", snake1BodyColor, 5, 10, [], 1, 0, 0, 0);
 let snake2 = new snake("Player2", snake2HeadColor, snake2BodyColor, 15, 10, [], 1, 0, 0, 0);
 let snake3 = new snake("Player3", "purple", "lime", 5, 5, [], 1, 0, 0, 0);
 let snake4 = new snake("Player4", "pink", "cyan", 15, 5, [], 1, 0, 0, 0);
+let snake5 = new snake("Player5", "tan", "lavender", 10, 5, [], 1, 0, 0, 0);
+let snake6 = new snake("Player6", "#FF7F50", "#36454F", 10, 15, [], 1, 0, 0, 0);
+let snake7 = new snake("Player7", "#FFFDD0", "navy", 5, 15, [], 1, 0, 0, 0);
+let snake8 = new snake("Player8", "teal", "silver", 15, 15, [], 1, 0, 0, 0);
 
+let AllSnakes = [snake1, snake2, snake3, snake4, snake5, snake6, snake7, snake8];
 let snakes = [snake1, snake2];
+//snakes = AllSnakes;
 
 //draw apple
 let appleX;
@@ -68,23 +79,12 @@ let AppleInitialized = false;
 
 // create game loop-to continously update screen
 function drawGame(){
-
-    snakes.forEach(snake => {
-        moveSnake(snake);
-    });
-    
-    if(started && !AppleInitialized)
-    {
-    	appleX = 10;
-    	appleY = 10;
-    	AppleInitialized = true;
-    }
-    
     clearScreen();
-
-    snakes.forEach(snake => {
-        drawSnake(snake);
-    });
+    moveSnake();
+    drawSnake();
+    drawApple();
+    checkCollision();
+    drawScore();
 
     // game over logic
     let stop = isGameOver();
@@ -92,12 +92,6 @@ function drawGame(){
         return;
     }
 
-    drawApple();
-    
-    snakes.forEach(snake => {
-        checkCollision(snake);
-        drawScore(snake);
-    });
     setTimeout(drawGame, 1000/speed);// Faster speed, less timeout
 }
 
@@ -113,13 +107,25 @@ function isGameOver(){
             return false;
         }
 
-        let otherSnakes = [];
-        otherSnakes.push(snakes);
-        console.log("before", otherSnakes);
+        if(started === false)
+        {
+            var countMovingPlayers = 0;
+            snakes.forEach(snake => {
+                // only draw apple once game has started and both players moving
+                if (snake.yVelocity !== 0 || snake.xVelocity !== 0) {
+                    countMovingPlayers++;
+                }
+            });
+
+            if(countMovingPlayers === snakes.length)
+            {
+                started = true;
+            }
+        }
+
+        let otherSnakes = snakes.slice();
         let snakeIndex = snakes.indexOf(snake);
         otherSnakes.splice(snakeIndex, 1);
-        console.log("after", otherSnakes);
-        debugger;
 
         otherSnakes.forEach(otherSnake => {
             // Game ends if snakes' heads clash
@@ -128,11 +134,6 @@ function isGameOver(){
                 gameOver = true;
             }
         });
-
-        // only draw apple once game has started and both players moving
-        if (snake.yVelocity !== 0 || snake.xVelocity !== 0) {
-            started = true;
-        }
 
         if(snake.score >= WinningScore)
         {
@@ -196,8 +197,8 @@ function displayGameOverText(snakes, Gameover)
         ctx.fillStyle="white";
     	ctx.font="36px verdana";
     	ctx.fillText("Draw!", canvas.width/2.5, canvas.height/2 + 50);
-
-        return ga
+        
+        Gameover = true;
     }
     // TODO: This will return only 1 winner even if multiple exist
     else
@@ -249,29 +250,51 @@ function wallTeleport(snake)
 }
 
 // score function
-function drawScore(snake){
-    ctx.fillStyle = snake.headCol;
-    ctx.font= "10px verdena";
+function drawScore(){
+    snakes.forEach(snake => {
+        ctx.fillStyle = snake.headCol;
+        ctx.font = "12px verdena";
+    
+        if(snake.name.includes("1"))
+        {
+            ctx.fillText(snake.name + " : " + snake.score, canvasSize*3/100, 10);
+        }
+    
+        if(snake.name.includes("2"))
+        {
+            ctx.fillText(snake.name + " : " + snake.score, canvasSize*30/100, 10); // 30%
+        }
+    
+        if(snake.name.includes("3"))
+        {
+            ctx.fillText(snake.name + " : " + snake.score, canvasSize*60/100, 10); // 60%
+        }
+    
+        if(snake.name.includes("4"))
+        {
+            ctx.fillText(snake.name + " : " + snake.score, canvasSize-65, 10);
+        }
 
-    if(snake.name.includes("1"))
-    {
-        ctx.fillText(snake.name + " : " + snake.score, canvasSize*2/100, 10);
-    }
-
-    if(snake.name.includes("2"))
-    {                                                   // 90%
-        ctx.fillText(snake.name + " : " + snake.score, canvasSize*30/100, 10);
-    }
-
-    if(snake.name.includes("3"))
-    {
-        ctx.fillText(snake.name + " : " + snake.score, canvasSize*65/100, 10);
-    }
-
-    if(snake.name.includes("4"))
-    {
-        ctx.fillText(snake.name + " : " + snake.score, canvasSize*90/100, 10);
-    }
+        if(snake.name.includes("5"))
+        {
+            ctx.fillText(snake.name + " : " + snake.score, canvasSize*3/100, canvasSize - 10);
+        }
+    
+        if(snake.name.includes("6"))
+        {
+            ctx.fillText(snake.name + " : " + snake.score, canvasSize*30/100, canvasSize - 10); // 30%
+        }
+    
+        if(snake.name.includes("7"))
+        {
+            ctx.fillText(snake.name + " : " + snake.score, canvasSize*60/100, canvasSize - 10); // 60%
+        }
+    
+        if(snake.name.includes("8"))
+        {
+            ctx.fillText(snake.name + " : " + snake.score, canvasSize-65, canvasSize - 10);
+        }
+    });
 }
 
 // clear our screen
@@ -282,46 +305,58 @@ function drawScore(snake){
     ctx.fillRect(0,0,canvas.width, canvas.height);
  }
  
- function drawSnake(snake){
+ function drawSnake(){
+    snakes.forEach(snake => {
+        ctx.fillStyle=snake.BodyCol;
     
-    ctx.fillStyle=snake.BodyCol;
+        //loop through our snakeparts array
+        for(let i=0;i<snake.parts.length;i++){
+            //draw snake parts
+            let part=snake.parts[i]
+             ctx.fillRect(part.x *tileCount, part.y *tileCount, tileSize,tileSize)
+        }
+        
+        //add parts to snake --through push
+        snake.parts.push(new snakePart(snake.headX,snake.headY));//put item at the end of list next to the head
+        
+        if(snake.parts.length>snake.tailLength){
+            snake.parts.shift();//remove furthest item from  snake part if we have more than our tail size
+        }
     
-    //loop through our snakeparts array
-    for(let i=0;i<snake.parts.length;i++){
-        //draw snake parts
-        let part=snake.parts[i]
-         ctx.fillRect(part.x *tileCount, part.y *tileCount, tileSize,tileSize)
-    }
-    
-    //add parts to snake --through push
-    snake.parts.push(new snakePart(snake.headX,snake.headY));//put item at the end of list next to the head
-    
-    if(snake.parts.length>snake.tailLength){
-        snake.parts.shift();//remove furthest item from  snake part if we have more than our tail size
-    }
-
-    ctx.fillStyle=snake.headCol;
-    ctx.fillRect(snake.headX* tileCount,snake.headY* tileCount, tileSize,tileSize)
+        ctx.fillStyle=snake.headCol;
+        ctx.fillRect(snake.headX* tileCount,snake.headY* tileCount, tileSize,tileSize)
+    });
  }
  
- function moveSnake(snake){
-    snake.headX=snake.headX + snake.xVelocity;
-    snake.headY=snake.headY+ snake.yVelocity;
+ function moveSnake(){
+    snakes.forEach(snake => {
+        snake.headX=snake.headX + snake.xVelocity;
+        snake.headY=snake.headY+ snake.yVelocity;
+    });
  }
  
  function drawApple(){
-     ctx.fillStyle="red";
-     ctx.fillRect(appleX*tileCount, appleY*tileCount, tileSize, tileSize)
+    if(started && !AppleInitialized)
+    {
+    	appleX = 10;
+    	appleY = 10;
+    	AppleInitialized = true;
+    }
+
+    ctx.fillStyle="red";
+    ctx.fillRect(appleX*tileCount, appleY*tileCount, tileSize, tileSize)
  }
  
  // check for collision and change apple position
- function checkCollision(snake){
-     if(appleX==snake.headX && appleY==snake.headY){
-         appleX=Math.floor(Math.random()*tileCount);
-         appleY=Math.floor(Math.random()*tileCount);
-         snake.tailLength++;
-         snake.score++; //increase our score value
-     }
+ function checkCollision(){
+    snakes.forEach(snake => {
+        if(appleX==snake.headX && appleY==snake.headY){
+            appleX=Math.floor(Math.random()*tileCount);
+            appleY=Math.floor(Math.random()*tileCount);
+            snake.tailLength++;
+            snake.score++; //increase our score value
+        }
+    });
  }
  
  //add event listener to our body
@@ -380,51 +415,36 @@ function keyDown()
     	moveRight(snake1);
     }
 
-    //Custom
 
     //Custom1
-	//Up
-    if(event.keyCode==custom1[0]){
-    	moveUp(snake3);
-    }
-    
-    //Down
-    if(event.keyCode==custom1[1]){
-    	moveDown(snake3);
-    }
-
-	//Left
-    if(event.keyCode==custom1[2]){
-    	moveLeft(snake3);
-    }
-    
-    //Right
-    if(event.keyCode==custom1[3]){
-    	moveRight(snake3);
-    }
-
+    customMovement(snake3, custom1);
     //Custom2
-	//Up
-    if(event.keyCode==custom2[0]){
-    	moveUp(snake4);
-    }
-    
-    //Down
-    if(event.keyCode==custom2[1]){
-    	moveDown(snake4);
-    }
-
-	//Left
-    if(event.keyCode==custom2[2]){
-    	moveLeft(snake4);
-    }
-    
-    //Right
-    if(event.keyCode==custom2[3]){
-    	moveRight(snake4);
-    }
+    customMovement(snake4, custom2);
+    //Custom3
+    customMovement(snake5, custom3);
+    //Custom4
+    customMovement(snake6, custom4);
+    //Custom5
+    customMovement(snake7, custom5);
+    //Custom6
+    customMovement(snake8, custom6);
 }
 
+function customMovement(snake, controls)
+{
+    if(event.keyCode==controls[0]){
+    	moveUp(snake);
+    }
+    if(event.keyCode==controls[1]){
+    	moveDown(snake);
+    }
+    if(event.keyCode==controls[2]){
+    	moveLeft(snake);
+    }
+    if(event.keyCode==controls[3]){
+    	moveRight(snake);
+    }
+}
 
 function moveUp(snake)
 {
