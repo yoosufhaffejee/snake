@@ -701,15 +701,15 @@ function handleTouchMove(evt) {
 
     if (Math.abs(xDiff) > Math.abs(yDiff)) {/*most significant*/
         if (xDiff > 0) {
-            moveLeft(snakes[0].xVelocity, snakes[0].yVelocity);
+            moveLeft(snakes[0]);
         } else {
-            moveRight(snakes[0].xVelocity, snakes[0].yVelocity);
+            moveRight(snakes[0]);
         }
     } else {
         if (yDiff > 0) {
-            moveUp(snakes[0].xVelocity, snakes[0].yVelocity);
+            moveUp(snakes[0]);
         } else {
-            moveDown(snakes[0].xVelocity, snakes[0].yVelocity);
+            moveDown(snakes[0]);
         }
     }
     /* reset values */
