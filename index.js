@@ -308,6 +308,10 @@ function setControls(e)
         {
             WinningScore = 999;
         }
+	else
+	{
+		WinningScore = 25;
+	}
     }
 }
 
@@ -662,6 +666,10 @@ function InitP1Controls()
     buttonMappings.push([87, 83, 65, 68]);
     snakes.push(AllSnakes[playerCount]);
     playerCount++;
+    if(playerCount === 1)
+    {
+	    WinningScore = 999;
+    }
 }
 
 if(isTouchDevice() === true)
