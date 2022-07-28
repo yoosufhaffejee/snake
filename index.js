@@ -666,8 +666,13 @@ function InitP1Controls()
 
 if(isTouchDevice() === true)
 {
-    alert(isTouchDevice());
-    InitP1Controls();
+    let text = "Touchscreen Detected!\nEnable Touch Controls?.";
+    if (confirm(text) == true) {
+        InitP1Controls();
+    }
+    else {
+
+    }
 }
 
 var xDown = null;                                                        
