@@ -462,8 +462,8 @@ function drawScore(){
  function drawApple(){
     if(started === true && AppleInitialized === false)
     {
-    	appleX = tileCount-2;
-    	appleY = tileCount-2;
+    	appleX = Math.floor(Math.random()*(tileCount-2));
+    	appleY = Math.floor(Math.random()*(tileCount-2));
     	AppleInitialized = true;
     }
 
