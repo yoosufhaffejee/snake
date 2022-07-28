@@ -44,6 +44,8 @@ let lives = 1;
 let solidWalls = false;
 let WinningScore = 25;
 
+let gameOver=false;
+
 //Players
 let playerCount = 0;
 
@@ -151,7 +153,7 @@ function pause()
 //Game Over function
 function isGameOver(){
 
-    let gameOver=false;
+    gameOver = false;
 
     snakes.forEach(snake => {
 
@@ -195,19 +197,19 @@ function isGameOver(){
 
         if(solidWalls==true)
         {
-            wallCollision(snake, gameOver);
+            wallCollision(snake);
         }
         else
         {
             wallTeleport(snake);
         }
 
-        CheckBodyColission(snake);
+        CheckBodyColission(snake, gameOver);
     });
 
     //display text Game Over
     if(gameOver){
-        displayGameOverText(snakes, gameOver);
+        displayGameOverText(snakes);
     }
 
     // this will stop execution of drawgame method
@@ -223,6 +225,7 @@ function CheckBodyColission(snake)
             if(playerCount === 1)
             {
                 gameOver=true;
+                return;
             }
             let penalty = snake.parts.length - i - 1;
             snake.parts.splice(snake.parts[i], penalty);
@@ -317,6 +320,14 @@ function displayGameOverText(snakes, Gameover)
     ctx.font="50px verdana";
     ctx.fillText("Game Over!", canvas.width/6.5, canvas.height/2);
 
+    if(playerCount === 1)
+    {
+        ctx.fillStyle=snakes[0].headCol;
+    	ctx.font="36px verdana";
+    	ctx.fillText("Score: " + snakes[0].score, canvas.width/5.5, canvas.height/2 + 50);
+        return;
+    }
+
     // Winner Text
     let winner;
     let highestScore = 0;
@@ -355,19 +366,19 @@ function displayGameOverText(snakes, Gameover)
     }
 }
 
-function wallCollision(snake, Gameover)
+function wallCollision(snake)
 {
     if(snake.headX<0){//if snake hits left wall
-        Gameover=true;
+        gameOver=true;
     }
     else if(snake.headX===tileCount){//if snake hits right wall
-        Gameover=true;
+        gameOver=true;
     }
     else if(snake.headY<0){//if snake hits wall at the top
-        Gameover=true;
+        gameOver=true;
     }
     else if(snake.headY===tileCount){//if snake hits wall at the bottom
-        Gameover=true;
+        gameOver=true;
     }
 }
 
