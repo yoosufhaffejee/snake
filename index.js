@@ -43,6 +43,7 @@ let canvasSize = 600;
 let lives = 1;
 let solidWalls = false;
 let WinningScore = 25;
+
 //Players
 let playerCount = 0;
 
@@ -200,19 +201,8 @@ function isGameOver(){
         {
             wallTeleport(snake);
         }
-    
-        //stop game when snake crush to its own body
-         for(let i=0; i<snake.parts.length;i++){
-             let part=snake.parts[i];
-             if(part.x===snake.headX && part.y===snake.headY){//check whether any part of snake is occupying the same space
-                 //gameOver=true;
-                 let penalty = snake.parts.length - i - 1;
-                 snake.parts.splice(snake.parts[i], penalty);
-                 snake.tailLength-=penalty;
-                 snake.score-= penalty;
-                 break; // to break out of for loop
-             }
-         }
+
+        CheckBodyColission(snake);
     });
 
     //display text Game Over
@@ -222,6 +212,25 @@ function isGameOver(){
 
     // this will stop execution of drawgame method
     return gameOver;
+}
+
+function CheckBodyColission(snake)
+{
+    //stop game when snake crush to its own body
+    for(let i=0; i<snake.parts.length;i++){
+        let part=snake.parts[i];
+        if(part.x===snake.headX && part.y===snake.headY){//check whether any part of snake is occupying the same space
+            if(playerCount === 1)
+            {
+                gameOver=true;
+            }
+            let penalty = snake.parts.length - i - 1;
+            snake.parts.splice(snake.parts[i], penalty);
+            snake.tailLength-=penalty;
+            snake.score-= penalty;
+            break; // to break out of for loop
+        }
+    } 
 }
 
 function addSnake()
@@ -290,6 +299,11 @@ function setControls(e)
             modal.style.display = "none"
             isPasued = false;
             txtPause.hidden = true;
+        }
+
+        if(playerCount === 1)
+        {
+            WinningScore = 999;
         }
     }
 }
