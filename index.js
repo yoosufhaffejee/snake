@@ -27,12 +27,14 @@ const modal = document.getElementById("myModal");
 // Get text content
 const modalText = document.getElementById("modalText");
 const btn = document.getElementById("btnAdd");
+const txtPause = document.getElementById("txtPause");
 
 // Temp var to store the keys entered in popup
 let keys = [];
 
 // Settings
 //General
+let isPasued = false;
 let sameTeam = false;
 let TouchControls = false;
 let speed = 12;
@@ -48,9 +50,17 @@ let playerCount = 0;
 //2D Array
 let buttonMappings = [];
 
+let xs = 0;
+let s = 20;
+let m = 24;//.5;
+let l = 31.75;
+let xl = 34.75;
+let xxl = 0;
+let xxxl= 0;
+
 canvas.width = canvasSize;
 canvas.height = canvasSize;
-let tileCount = canvasSize/24;
+let tileCount = canvasSize/m;
 
 let tileSize=canvasSize/tileCount-2;
 
@@ -76,6 +86,10 @@ let GameOverText = false;
 
 function reset()
 {
+    clearScreen();
+    appleX = -5;
+    appleY = -5;
+
     lives = 1;
     keys = [];
     started = false;
@@ -102,9 +116,14 @@ function reset()
 
 // create game loop-to continously update screen
 function drawGame(){
+    if(isPasued)
+    {
+        pause();
+    }
+
     clearScreen();
-    moveSnake();
     drawSnake();
+    moveSnake();
     drawApple();
     checkCollision();
     drawScore();
@@ -116,6 +135,16 @@ function drawGame(){
     }
 
     setTimeout(drawGame, 1000/speed);// Faster speed, less timeout
+}
+
+function pause()
+{
+    snakes.forEach(snake => {
+        snake.xVelocity = 0;
+        snake.yVelocity = 0;
+    });
+
+    txtPause.hidden = false;
 }
 
 //Game Over function
@@ -203,6 +232,9 @@ function addSnake()
     }
     else if(started === false && GameOverText === false)
     {
+        //Pause Game
+        isPasued = true;
+
         // Show initial popup
         modalText.textContent = AllSnakes[playerCount].name + ": Tap key to bind 'Move Up'"
         modal.style.display = "block";
@@ -215,6 +247,22 @@ function setControls(e)
 {
     if(modal.style.display == "block")
     {
+        // Cannot map Enter, Space, Esc
+        if(e.keyCode == 13 || e.keyCode == 27 || e.keyCode == 32)
+        {
+            return;
+        }
+
+        //Check if key is used
+        buttonMappings.forEach(Controller => {
+            Controller.forEach(key => {
+                if(key === e.keyCode)
+                {
+                    setControls(e);
+                }
+            });
+        });
+
         keys.push(e.keyCode);
 
         if(keys.length === 1)
@@ -240,6 +288,8 @@ function setControls(e)
             buttonMappings.push(keys);
             keys = [];
             modal.style.display = "none"
+            isPasued = false;
+            txtPause.hidden = true;
         }
     }
 }
@@ -310,15 +360,15 @@ function wallCollision(snake, Gameover)
 function wallTeleport(snake)
 {
     if(snake.headX<0){//if snake hits left wall
-        snake.headX=tileCount;
+        snake.headX=tileCount-1;
     }
-    else if(snake.headX===tileCount){//if snake hits right wall
+    else if(snake.headX===tileCount-1){//if snake hits right wall
         snake.headX=0;
     }
     else if(snake.headY<0){//if snake hits wall at the top
-        snake.headY=tileCount;
+        snake.headY=tileCount-1;
     }
-    else if(snake.headY===tileCount){//if snake hits wall at the bottom
+    else if(snake.headY===tileCount-1){//if snake hits wall at the bottom
         snake.headY=0;
     }
 }
@@ -376,7 +426,7 @@ function drawScore(){
     // make screen black
     ctx.fillStyle= 'black';
     // black color start from 0px left, right to canvas width and canvas height
-    ctx.fillRect(0,0,canvas.width, canvas.height);
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
  }
  
  function drawSnake(){
@@ -412,11 +462,18 @@ function drawScore(){
  function drawApple(){
     if(started === true && AppleInitialized === false)
     {
-    	appleX = 10;
-    	appleY = 10;
+    	appleX = tileCount-2;
+    	appleY = tileCount-2;
     	AppleInitialized = true;
     }
 
+    // appleX = tileCount-1;
+    // appleY = tileCount-1;
+    // ctx.fillStyle="green";
+    // ctx.fillRect(appleX*tileCount, appleY*tileCount, tileSize, tileSize)
+    // appleX = tileCount-2;
+    // appleY = tileCount-2;
+    
     ctx.fillStyle="red";
     ctx.fillRect(appleX*tileCount, appleY*tileCount, tileSize, tileSize)
  }
@@ -425,8 +482,9 @@ function drawScore(){
  function checkCollision(){
     snakes.forEach(snake => {
         if(appleX==snake.headX && appleY==snake.headY){
-            appleX=Math.floor(Math.random()*tileCount);
-            appleY=Math.floor(Math.random()*tileCount);
+            appleX=Math.floor(Math.random()*(tileCount-2));
+            appleY=Math.floor(Math.random()*(tileCount-2));
+            console.log("apple", appleX, appleY);
             snake.tailLength++;
             snake.score++; //increase our score value
         }
@@ -438,17 +496,31 @@ function drawScore(){
 
 function keyDown()
 {
-    //Enter to Reset Game
+    // Enter to Reset Game
     if(event.keyCode==13)
     {
         event.preventDefault();
         reset();
-        clearScreen();
-        appleX = -5;
-        appleY = -5;
         return;
     }
 
+    // Esc to Pause Game
+    if(event.keyCode==27)
+    {
+        txtPause.hidden = true;
+        return isPasued = !isPasued;
+    }
+
+    // Space Bar to Add Snake
+    if(event.keyCode==32)
+    {
+        addSnake();
+    }
+
+    if(isPasued)
+    {
+        return;
+    }
     /*
     //Arrows
 	// Arrow Up
@@ -598,15 +670,15 @@ function handleTouchMove(evt) {
 
     if (Math.abs(xDiff) > Math.abs(yDiff)) {/*most significant*/
         if (xDiff > 0) {
-            moveLeft(snake.xVelocity, snake.yVelocity);
+            moveLeft(snakes[0].xVelocity, snakes[0].yVelocity);
         } else {
-            moveRight(snake.xVelocity, snake.yVelocity);
+            moveRight(snakes[0].xVelocity, snakes[0].yVelocity);
         }
     } else {
         if (yDiff > 0) {
-            moveUp(snake.xVelocity, snake.yVelocity);
+            moveUp(snakes[0].xVelocity, snakes[0].yVelocity);
         } else {
-            moveDown(snake.xVelocity, snake.yVelocity);
+            moveDown(snakes[0].xVelocity, snakes[0].yVelocity);
         }
     }
     /* reset values */
