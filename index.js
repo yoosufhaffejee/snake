@@ -666,6 +666,7 @@ function InitP1Controls()
 
 if(isTouchDevice() === true)
 {
+    alert(isTouchDevice());
     InitP1Controls();
 }
 
