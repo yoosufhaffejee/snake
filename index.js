@@ -186,7 +186,7 @@ function isGameOver(){
             // Game ends if snakes' heads clash
             if((snake.headX === otherSnake.headX && snake.headY === otherSnake.headY) && started)
             {
-                //gameOver = true;
+                gameOver = true;
             }
         });
 
