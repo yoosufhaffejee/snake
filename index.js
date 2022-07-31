@@ -20,11 +20,17 @@ class snakePart{
     }
 }
 
+class food{
+    constructor(col, x, y){
+        this.col = col;
+        this.x=x;
+        this.y=y;
+    }
+}
+
 const canvas=document.getElementById('game');
 const ctx=canvas.getContext('2d');
-// Get the modal
 const modal = document.getElementById("myModal");
-// Get text content
 const modalText = document.getElementById("modalText");
 const btn = document.getElementById("btnAdd");
 const txtPause = document.getElementById("txtPause");
@@ -43,45 +49,32 @@ let canvasSize = 600;
 let lives = 1;
 let solidWalls = false;
 let WinningScore = 25;
-
 let gameOver=false;
-
 //Players
 let playerCount = 0;
-
 //Controls
 //2D Array
 let buttonMappings = [];
 
-let xs = 0;
-let s = 20;
-let m = 24;//.5;
-let l = 31.75;
-let xl = 34.75;
-let xxl = 0;
-let xxxl= 0;
-
 canvas.width = canvasSize;
 canvas.height = canvasSize;
-let tileCount = canvasSize/m;
-
+let tileCount = canvasSize/24;
 let tileSize=canvasSize/tileCount-2;
 
-let snake1 = new snake("Player1", "orange", "green", 5, 10, [], 1, 0, 0, 0);
-let snake2 = new snake("Player2", "yellow", "blue", 15, 10, [], 1, 0, 0, 0);
-let snake3 = new snake("Player3", "purple", "lime", 5, 5, [], 1, 0, 0, 0);
-let snake4 = new snake("Player4", "pink", "cyan", 15, 5, [], 1, 0, 0, 0);
-let snake5 = new snake("Player5", "tan", "lavender", 10, 5, [], 1, 0, 0, 0);
-let snake6 = new snake("Player6", "#FF7F50", "#36454F", 10, 15, [], 1, 0, 0, 0);
-let snake7 = new snake("Player7", "#FFFDD0", "navy", 5, 15, [], 1, 0, 0, 0);
-let snake8 = new snake("Player8", "teal", "silver", 15, 15, [], 1, 0, 0, 0);
+const OriginalSnakes = [
+    new snake("Player1", "orange", "green", 5, 10, [new snakePart(-5, -5)], 1, 0, 0, 0),
+    new snake("Player2", "yellow", "blue", 15, 10, [new snakePart(-5, -5)], 1, 0, 0, 0),
+    new snake("Player3", "purple", "lime", 5, 5, [new snakePart(-5, -5)], 1, 0, 0, 0),
+    new snake("Player4", "pink", "cyan", 15, 5, [new snakePart(-5, -5)], 1, 0, 0, 0),
+    new snake("Player5", "tan", "lavender", 10, 5, [new snakePart(-5, -5)], 1, 0, 0, 0),
+    new snake("Player6", "#FF7F50", "#36454F", 10, 15, [new snakePart(-5, -5)], 1, 0, 0, 0),
+    new snake("Player7", "#FFFDD0", "navy", 5, 15, [new snakePart(-5, -5)], 1, 0, 0, 0),
+    new snake("Player8", "teal", "silver", 15, 15, [new snakePart(-5, -5)], 1, 0, 0, 0)
+];
 
-let AllSnakes = [snake1, snake2, snake3, snake4, snake5, snake6, snake7, snake8];
+let AllSnakes = structuredClone(OriginalSnakes);
 let snakes = [];
-
-//draw apple
-let appleX;
-let appleY;
+let apple = new food("red", -5, -5);
 
 let started = false;
 let AppleInitialized = false;
@@ -89,32 +82,24 @@ let GameOverText = false;
 
 function reset()
 {
-    clearScreen();
-    appleX = -5;
-    appleY = -5;
+    apple = new food("red", -5, -5);
+    //drawApple();
 
-    lives = 1;
     keys = [];
+
     started = false;
     AppleInitialized = false;
     GameOverText = false;
 
-    snake1 = new snake("Player1", "orange", "green", 5, 10, [], 1, 0, 0, 0);
-    snake2 = new snake("Player2", "yellow", "blue", 15, 10, [], 1, 0, 0, 0);
-    snake3 = new snake("Player3", "purple", "lime", 5, 5, [], 1, 0, 0, 0);
-    snake4 = new snake("Player4", "pink", "cyan", 15, 5, [], 1, 0, 0, 0);
-    snake5 = new snake("Player5", "tan", "lavender", 10, 5, [], 1, 0, 0, 0);
-    snake6 = new snake("Player6", "#FF7F50", "#36454F", 10, 15, [], 1, 0, 0, 0);
-    snake7 = new snake("Player7", "#FFFDD0", "navy", 5, 15, [], 1, 0, 0, 0);
-    snake8 = new snake("Player8", "teal", "silver", 15, 15, [], 1, 0, 0, 0);
-
-    AllSnakes = [snake1, snake2, snake3, snake4, snake5, snake6, snake7, snake8];
+    AllSnakes = structuredClone(OriginalSnakes);
 
     let oldSnakes = snakes.length;
     snakes = [];
     for (let index = 0; index < oldSnakes; index++) {
         snakes.push(AllSnakes[index]);
     }
+
+    //drawGame();
 }
 
 // create game loop-to continously update screen
@@ -187,12 +172,24 @@ function isGameOver(){
             if((snake.headX === otherSnake.headX && snake.headY === otherSnake.headY) && started)
             {
                 gameOver = true;
+
+                if(isTouchDevice())
+                {
+                    reset();
+                    drawGame();
+                }
             }
         });
 
         if(snake.score >= WinningScore)
         {
             gameOver=true;
+
+            if(isTouchDevice())
+            {
+                reset();
+                drawGame();
+            }
         }
 
         if(solidWalls==true)
@@ -225,6 +222,13 @@ function CheckBodyColission(snake)
             if(playerCount === 1)
             {
                 gameOver=true;
+
+                if(isTouchDevice())
+                {
+                    reset();
+                    drawGame();
+                }
+
                 return;
             }
             let penalty = snake.parts.length - i - 1;
@@ -384,6 +388,12 @@ function wallCollision(snake)
     else if(snake.headY===tileCount){//if snake hits wall at the bottom
         gameOver=true;
     }
+
+    if(gameOver === true && isTouchDevice())
+    {
+        reset();
+        drawGame();
+    }
 }
 
 function wallTeleport(snake)
@@ -491,29 +501,33 @@ function drawScore(){
  function drawApple(){
     if(started === true && AppleInitialized === false)
     {
-    	appleX = Math.floor(Math.random()*(tileCount-2));
-    	appleY = Math.floor(Math.random()*(tileCount-2));
+        apple = new food("red", randomPosition(), randomPosition());
     	AppleInitialized = true;
     }
 
-    // appleX = tileCount-1;
-    // appleY = tileCount-1;
-    // ctx.fillStyle="green";
-    // ctx.fillRect(appleX*tileCount, appleY*tileCount, tileSize, tileSize)
-    // appleX = tileCount-2;
-    // appleY = tileCount-2;
-    
-    ctx.fillStyle="red";
-    ctx.fillRect(appleX*tileCount, appleY*tileCount, tileSize, tileSize)
+        // apple.x = tileCount-1;
+        // apple.y = tileCount-1;
+        // ctx.fillStyle="green";
+        // ctx.fillRect(apple.x*tileCount, apple.y*tileCount, tileSize, tileSize)
+        // apple.x = tileCount-2;
+        // apple.y = tileCount-2;
+
+        ctx.fillStyle= apple.col;
+        ctx.fillRect(apple.x*tileCount, apple.y*tileCount, tileSize, tileSize)
  }
  
+ function randomPosition()
+ {
+    return Math.floor(Math.random()*(tileCount-2));
+ }
+
  // check for collision and change apple position
  function checkCollision(){
     snakes.forEach(snake => {
-        if(appleX==snake.headX && appleY==snake.headY){
-            appleX=Math.floor(Math.random()*(tileCount-2));
-            appleY=Math.floor(Math.random()*(tileCount-2));
-            console.log("apple", appleX, appleY);
+        if(apple.x==snake.headX && apple.y==snake.headY){
+            apple.x=randomPosition();
+            apple.y=randomPosition();
+            console.log("apple", apple.x, apple.y);
             snake.tailLength++;
             snake.score++; //increase our score value
         }
@@ -530,7 +544,11 @@ function keyDown()
     {
         event.preventDefault();
         reset();
-        return;
+
+        if(gameOver === true)
+        {
+            drawGame();
+        }
     }
 
     // Esc to Pause Game
