@@ -20,11 +20,17 @@ class snakePart{
     }
 }
 
+class food{
+    constructor(col, x, y){
+        this.col = col;
+        this.x=x;
+        this.y=y;
+    }
+}
+
 const canvas=document.getElementById('game');
 const ctx=canvas.getContext('2d');
-// Get the modal
 const modal = document.getElementById("myModal");
-// Get text content
 const modalText = document.getElementById("modalText");
 const btn = document.getElementById("btnAdd");
 const txtPause = document.getElementById("txtPause");
@@ -43,45 +49,38 @@ let canvasSize = 600;
 let lives = 1;
 let solidWalls = false;
 let WinningScore = 25;
-
 let gameOver=false;
-
 //Players
 let playerCount = 0;
-
 //Controls
 //2D Array
 let buttonMappings = [];
 
-let xs = 0;
-let s = 20;
-let m = 24;//.5;
-let l = 31.75;
-let xl = 34.75;
-let xxl = 0;
-let xxxl= 0;
-
 canvas.width = canvasSize;
 canvas.height = canvasSize;
-let tileCount = canvasSize/m;
-
+let tileCount = canvasSize/24;
 let tileSize=canvasSize/tileCount-2;
 
-let snake1 = new snake("Player1", "orange", "green", 5, 10, [], 1, 0, 0, 0);
-let snake2 = new snake("Player2", "yellow", "blue", 15, 10, [], 1, 0, 0, 0);
-let snake3 = new snake("Player3", "purple", "lime", 5, 5, [], 1, 0, 0, 0);
-let snake4 = new snake("Player4", "pink", "cyan", 15, 5, [], 1, 0, 0, 0);
-let snake5 = new snake("Player5", "tan", "lavender", 10, 5, [], 1, 0, 0, 0);
-let snake6 = new snake("Player6", "#FF7F50", "#36454F", 10, 15, [], 1, 0, 0, 0);
-let snake7 = new snake("Player7", "#FFFDD0", "navy", 5, 15, [], 1, 0, 0, 0);
-let snake8 = new snake("Player8", "teal", "silver", 15, 15, [], 1, 0, 0, 0);
+// Static list of available snakes
+const allSnakes = [
+    new snake("Player1", "orange", "green", 5, 10, [new snakePart(-5, -5)], 1, 0, 0, 0),
+    new snake("Player2", "yellow", "blue", 15, 10, [new snakePart(-5, -5)], 1, 0, 0, 0),
+    new snake("Player3", "purple", "lime", 5, 5, [new snakePart(-5, -5)], 1, 0, 0, 0),
+    new snake("Player4", "pink", "cyan", 15, 5, [new snakePart(-5, -5)], 1, 0, 0, 0),
+    new snake("Player5", "tan", "lavender", 10, 5, [new snakePart(-5, -5)], 1, 0, 0, 0),
+    new snake("Player6", "#FF7F50", "#36454F", 10, 15, [new snakePart(-5, -5)], 1, 0, 0, 0),
+    new snake("Player7", "#FFFDD0", "navy", 5, 15, [new snakePart(-5, -5)], 1, 0, 0, 0),
+    new snake("Player8", "teal", "silver", 15, 15, [new snakePart(-5, -5)], 1, 0, 0, 0)
+];
 
-let AllSnakes = [snake1, snake2, snake3, snake4, snake5, snake6, snake7, snake8];
-let snakes = [];
+// A temp list of all snakes, data will be modified
+let clonedSnakes = structuredClone(allSnakes);
+// The list of player snakes in lobby that will start game (points to cloned snakes)
+let playerSnakes = [];
+// The list of alive snakes for gamestate updates
+let aliveSnakes = [];
 
-//draw apple
-let appleX;
-let appleY;
+let apple = new food("red", -5, -5);
 
 let started = false;
 let AppleInitialized = false;
@@ -89,32 +88,30 @@ let GameOverText = false;
 
 function reset()
 {
-    clearScreen();
-    appleX = -5;
-    appleY = -5;
+    // Init and hide apple before game starts
+    apple = new food("red", -5, -5);
 
-    lives = 1;
+    // Reset any unfinished key entries
     keys = [];
+
+    // Set state
     started = false;
     AppleInitialized = false;
+    // Hide text
     GameOverText = false;
 
-    snake1 = new snake("Player1", "orange", "green", 5, 10, [], 1, 0, 0, 0);
-    snake2 = new snake("Player2", "yellow", "blue", 15, 10, [], 1, 0, 0, 0);
-    snake3 = new snake("Player3", "purple", "lime", 5, 5, [], 1, 0, 0, 0);
-    snake4 = new snake("Player4", "pink", "cyan", 15, 5, [], 1, 0, 0, 0);
-    snake5 = new snake("Player5", "tan", "lavender", 10, 5, [], 1, 0, 0, 0);
-    snake6 = new snake("Player6", "#FF7F50", "#36454F", 10, 15, [], 1, 0, 0, 0);
-    snake7 = new snake("Player7", "#FFFDD0", "navy", 5, 15, [], 1, 0, 0, 0);
-    snake8 = new snake("Player8", "teal", "silver", 15, 15, [], 1, 0, 0, 0);
+    // Reset snakes to default
+    clonedSnakes = structuredClone(allSnakes);
 
-    AllSnakes = [snake1, snake2, snake3, snake4, snake5, snake6, snake7, snake8];
-
-    let oldSnakes = snakes.length;
-    snakes = [];
-    for (let index = 0; index < oldSnakes; index++) {
-        snakes.push(AllSnakes[index]);
+    // Get the number of players waiting to play before resetting
+    let lobbyPlayerCount = playerSnakes.length;
+    // Reset all players
+    playerSnakes = [];
+    // Only add the number of players waiting
+    for (let index = 0; index < lobbyPlayerCount; index++) {
+        playerSnakes.push(clonedSnakes[index]);
     }
+    aliveSnakes = playerSnakes.slice();
 }
 
 // create game loop-to continously update screen
@@ -142,7 +139,7 @@ function drawGame(){
 
 function pause()
 {
-    snakes.forEach(snake => {
+    aliveSnakes.forEach(snake => {
         snake.xVelocity = 0;
         snake.yVelocity = 0;
     });
@@ -155,7 +152,7 @@ function isGameOver(){
 
     gameOver = false;
 
-    snakes.forEach(snake => {
+    aliveSnakes.forEach(snake => {
 
         //check whether game has started
         if (snake.yVelocity === 0 && snake.xVelocity === 0) {
@@ -165,34 +162,70 @@ function isGameOver(){
         if(started === false)
         {
             var countMovingPlayers = 0;
-            snakes.forEach(snake => {
+            aliveSnakes.forEach(snake => {
                 // only draw apple once game has started and both players moving
                 if (snake.yVelocity !== 0 || snake.xVelocity !== 0) {
                     countMovingPlayers++;
                 }
             });
 
-            if(countMovingPlayers === snakes.length)
+            if(countMovingPlayers === aliveSnakes.length)
             {
                 started = true;
             }
         }
 
-        let otherSnakes = snakes.slice();
-        let snakeIndex = snakes.indexOf(snake);
+        let otherSnakes = aliveSnakes.slice();
+        let snakeIndex = aliveSnakes.indexOf(snake);
         otherSnakes.splice(snakeIndex, 1);
 
         otherSnakes.forEach(otherSnake => {
             // Game ends if snakes' heads clash
             if((snake.headX === otherSnake.headX && snake.headY === otherSnake.headY) && started)
             {
-                //gameOver = true;
+                // if last 2 snakes collide
+                if(aliveSnakes.length <= 2)
+                {
+                    // Check who won before removing
+                    displayGameOverText(aliveSnakes);
+                }
+
+                // Kill the snakes that collided
+                let index = aliveSnakes.indexOf(snake);
+                aliveSnakes.splice(index, 1);
+
+                index = aliveSnakes.indexOf(otherSnake);
+                aliveSnakes.splice(index, 1);
+
+                // End game if 1 or less snakes left
+                if(aliveSnakes.length <= 1)
+                {
+                    gameOver = true;
+
+                    // Restart after few seconds
+                    if(isTouchDevice())
+                    {
+                        setTimeout(x => {
+                            reset();
+                            drawGame();
+                        }, 5000);
+                    }
+                }
             }
         });
 
         if(snake.score >= WinningScore)
         {
             gameOver=true;
+
+            // Restart after few seconds
+            if(isTouchDevice())
+            {
+                setTimeout(x => {
+                    reset();
+                    drawGame();
+                }, 5000);
+            }
         }
 
         if(solidWalls==true)
@@ -208,8 +241,8 @@ function isGameOver(){
     });
 
     //display text Game Over
-    if(gameOver){
-        displayGameOverText(snakes);
+    if(gameOver && !GameOverText){
+        displayGameOverText(aliveSnakes);
     }
 
     // this will stop execution of drawgame method
@@ -225,6 +258,16 @@ function CheckBodyColission(snake)
             if(playerCount === 1)
             {
                 gameOver=true;
+
+                // Restart after few seconds
+                if(isTouchDevice())
+                {
+                    setTimeout(x => {
+                        reset();
+                        drawGame();
+                    }, 5000);
+                }
+
                 return;
             }
             let penalty = snake.parts.length - i - 1;
@@ -248,7 +291,7 @@ function addSnake()
         isPasued = true;
 
         // Show initial popup
-        modalText.textContent = AllSnakes[playerCount].name + ": Tap key to bind 'Move Up'"
+        modalText.textContent = clonedSnakes[playerCount].name + ": Tap key to bind 'Move Up'"
         modal.style.display = "block";
     }
 }
@@ -279,22 +322,25 @@ function setControls(e)
 
         if(keys.length === 1)
         {
-            modalText.textContent = AllSnakes[playerCount].name + ": Tap key to bind 'Move Down'"
+            modalText.textContent = clonedSnakes[playerCount].name + ": Tap key to bind 'Move Down'"
         }
 
         if(keys.length === 2)
         {
-            modalText.textContent = AllSnakes[playerCount].name + ": Tap key to bind 'Move Left'"
+            modalText.textContent = clonedSnakes[playerCount].name + ": Tap key to bind 'Move Left'"
         }
 
         if(keys.length === 3)
         {
-            modalText.textContent = AllSnakes[playerCount].name + ": Tap key to bind 'Move Right'"
+            modalText.textContent = clonedSnakes[playerCount].name + ": Tap key to bind 'Move Right'"
         }
 
         if(keys.length === 4)
         {
-            snakes.push(AllSnakes[playerCount]);
+            // Add the player to the lobby
+            playerSnakes.push(clonedSnakes[playerCount]);
+            // Add the player to the game
+            aliveSnakes.push(clonedSnakes[playerCount]);
             playerCount++;
 
             buttonMappings.push(keys);
@@ -315,7 +361,7 @@ function setControls(e)
     }
 }
 
-function displayGameOverText(snakes, Gameover)
+function displayGameOverText(aliveSnakes)
 {
     GameOverText = true;
 
@@ -324,11 +370,19 @@ function displayGameOverText(snakes, Gameover)
     ctx.font="50px verdana";
     ctx.fillText("Game Over!", canvas.width/6.5, canvas.height/2);
 
-    if(playerCount === 1)
+    if(playerSnakes.length === 1)
     {
-        ctx.fillStyle=snakes[0].headCol;
+        ctx.fillStyle=aliveSnakes[0].headCol;
     	ctx.font="36px verdana";
-    	ctx.fillText("Score: " + snakes[0].score, canvas.width/5.5, canvas.height/2 + 50);
+    	ctx.fillText("Score: " + aliveSnakes[0].score, canvas.width/5.5, canvas.height/2 + 50);
+        return;
+    }
+
+    if(aliveSnakes.length === 1)
+    {
+        ctx.fillStyle=aliveSnakes[0].headCol;
+    	ctx.font="36px verdana";
+    	ctx.fillText(aliveSnakes[0].name + "Wins!", canvas.width/5.5, canvas.height/2 + 50);
         return;
     }
 
@@ -337,7 +391,7 @@ function displayGameOverText(snakes, Gameover)
     let highestScore = 0;
 
     let count = 0;
-    snakes.forEach(snake => {
+    aliveSnakes.forEach(snake => {
         if(snake.score !== count)
         {
             count++;
@@ -351,12 +405,12 @@ function displayGameOverText(snakes, Gameover)
     	ctx.font="36px verdana";
     	ctx.fillText("Draw!", canvas.width/2.5, canvas.height/2 + 50);
         
-        Gameover = true;
+        gameOver = true;
     }
     // TODO: This will return only 1 winner even if multiple exist
     else
     {
-        snakes.forEach(snake => {
+        aliveSnakes.forEach(snake => {
             if(snake.score >= highestScore)
             {
                 highestScore = snake.score;
@@ -384,6 +438,15 @@ function wallCollision(snake)
     else if(snake.headY===tileCount){//if snake hits wall at the bottom
         gameOver=true;
     }
+
+    // Restart after few seconds
+    if(gameOver === true && isTouchDevice())
+    {
+        setTimeout(x => {
+            reset();
+            drawGame();
+        }, 5000);
+    }
 }
 
 function wallTeleport(snake)
@@ -404,7 +467,7 @@ function wallTeleport(snake)
 
 // score function
 function drawScore(){
-    snakes.forEach(snake => {
+    playerSnakes.forEach(snake => {
         ctx.fillStyle = snake.headCol;
         ctx.font = "12px verdena";
     
@@ -459,7 +522,7 @@ function drawScore(){
  }
  
  function drawSnake(){
-    snakes.forEach(snake => {
+    aliveSnakes.forEach(snake => {
         ctx.fillStyle=snake.BodyCol;
     
         //loop through our snakeparts array
@@ -482,7 +545,7 @@ function drawScore(){
  }
  
  function moveSnake(){
-    snakes.forEach(snake => {
+    aliveSnakes.forEach(snake => {
         snake.headX=snake.headX + snake.xVelocity;
         snake.headY=snake.headY+ snake.yVelocity;
     });
@@ -491,29 +554,33 @@ function drawScore(){
  function drawApple(){
     if(started === true && AppleInitialized === false)
     {
-    	appleX = Math.floor(Math.random()*(tileCount-2));
-    	appleY = Math.floor(Math.random()*(tileCount-2));
+        apple = new food("red", randomPosition(), randomPosition());
     	AppleInitialized = true;
     }
 
-    // appleX = tileCount-1;
-    // appleY = tileCount-1;
-    // ctx.fillStyle="green";
-    // ctx.fillRect(appleX*tileCount, appleY*tileCount, tileSize, tileSize)
-    // appleX = tileCount-2;
-    // appleY = tileCount-2;
-    
-    ctx.fillStyle="red";
-    ctx.fillRect(appleX*tileCount, appleY*tileCount, tileSize, tileSize)
+        // apple.x = tileCount-1;
+        // apple.y = tileCount-1;
+        // ctx.fillStyle="green";
+        // ctx.fillRect(apple.x*tileCount, apple.y*tileCount, tileSize, tileSize)
+        // apple.x = tileCount-2;
+        // apple.y = tileCount-2;
+
+        ctx.fillStyle= apple.col;
+        ctx.fillRect(apple.x*tileCount, apple.y*tileCount, tileSize, tileSize)
  }
  
+ function randomPosition()
+ {
+    return Math.floor(Math.random()*(tileCount-2));
+ }
+
  // check for collision and change apple position
  function checkCollision(){
-    snakes.forEach(snake => {
-        if(appleX==snake.headX && appleY==snake.headY){
-            appleX=Math.floor(Math.random()*(tileCount-2));
-            appleY=Math.floor(Math.random()*(tileCount-2));
-            console.log("apple", appleX, appleY);
+    aliveSnakes.forEach(snake => {
+        if(apple.x==snake.headX && apple.y==snake.headY){
+            apple.x=randomPosition();
+            apple.y=randomPosition();
+            console.log("apple", apple.x, apple.y);
             snake.tailLength++;
             snake.score++; //increase our score value
         }
@@ -530,7 +597,11 @@ function keyDown()
     {
         event.preventDefault();
         reset();
-        return;
+
+        if(gameOver === true)
+        {
+            drawGame();
+        }
     }
 
     // Esc to Pause Game
@@ -594,8 +665,8 @@ function keyDown()
     }
     */
 
-    for (let i = 0; i < snakes.length; i++) {
-        customMovement(snakes[i], buttonMappings[i]);        
+    for (let i = 0; i < aliveSnakes.length; i++) {
+        customMovement(aliveSnakes[i], buttonMappings[i]);        
     }
 
 }
@@ -664,7 +735,8 @@ function isTouchDevice() {
 function InitP1Controls()
 {
     buttonMappings.push([87, 83, 65, 68]);
-    snakes.push(AllSnakes[playerCount]);
+    playerSnakes.push(clonedSnakes[playerCount]);
+    aliveSnakes.push(clonedSnakes[playerCount]);
     playerCount++;
     if(playerCount === 1)
     {
@@ -709,15 +781,15 @@ function handleTouchMove(evt) {
 
     if (Math.abs(xDiff) > Math.abs(yDiff)) {/*most significant*/
         if (xDiff > 0) {
-            moveLeft(snakes[0]);
+            moveLeft(playerSnakes[0]);
         } else {
-            moveRight(snakes[0]);
+            moveRight(playerSnakes[0]);
         }
     } else {
         if (yDiff > 0) {
-            moveUp(snakes[0]);
+            moveUp(playerSnakes[0]);
         } else {
-            moveDown(snakes[0]);
+            moveDown(playerSnakes[0]);
         }
     }
     /* reset values */
