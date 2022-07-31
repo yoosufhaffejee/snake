@@ -303,8 +303,18 @@ function setControls(e)
     if(modal.style.display == "block")
     {
         // Cannot map Enter, Space, Esc
-        if(e.keyCode == 13 || e.keyCode == 27 || e.keyCode == 32)
+        if(e.keyCode == 13 || e.keyCode == 32)
         {
+            return;
+        }
+
+        // Cancel Adding
+        if(e.keyCode == 27)
+        {
+            keys = [];
+            modal.style.display = "none"
+            isPasued = false;
+            txtPause.hidden = true;
             return;
         }
 
@@ -607,8 +617,11 @@ function keyDown()
     // Esc to Pause Game
     if(event.keyCode==27)
     {
-        txtPause.hidden = true;
-        return isPasued = !isPasued;
+        if(modal.style.display !== "block")
+        {
+            txtPause.hidden = true;
+            return isPasued = !isPasued;
+        }
     }
 
     // Space Bar to Add Snake
