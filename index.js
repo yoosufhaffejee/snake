@@ -10,6 +10,7 @@ class snake{
         this.xVelocity=xVelocity;
         this.yVelocity=yVelocity;
         this.score=score;
+        this.controls = [];
     }
 }
 
@@ -103,6 +104,10 @@ function reset()
     // Reset snakes to default
     clonedSnakes = structuredClone(allSnakes);
 
+    for (let i = 0; i < buttonMappings.length; i++) {
+        clonedSnakes[i].controls = buttonMappings[i];
+    }
+    
     // Get the number of players waiting to play before resetting
     let lobbyPlayerCount = playerSnakes.length;
     // Reset all players
@@ -190,12 +195,24 @@ function isGameOver(){
                     displayGameOverText(aliveSnakes);
                 }
 
-                // Kill the snakes that collided
-                let index = aliveSnakes.indexOf(snake);
-                aliveSnakes.splice(index, 1);
+                if (snake.score > otherSnake.score)
+                {
+                    index = aliveSnakes.indexOf(otherSnake);
+                    aliveSnakes.splice(index, 1);
+                }
+                else if(snake.score < otherSnake.score)
+                {
+                    let index = aliveSnakes.indexOf(snake);
+                    aliveSnakes.splice(index, 1);
+                }
+                else
+                {
+                    index = aliveSnakes.indexOf(otherSnake);
+                    aliveSnakes.splice(index, 1);
 
-                index = aliveSnakes.indexOf(otherSnake);
-                aliveSnakes.splice(index, 1);
+                    let index = aliveSnakes.indexOf(snake);
+                    aliveSnakes.splice(index, 1);
+                }
 
                 // End game if 1 or less snakes left
                 if(aliveSnakes.length <= 1)
@@ -319,10 +336,11 @@ function setControls(e)
         }
 
         //Check if key is used
-        buttonMappings.forEach(Controller => {
-            Controller.forEach(key => {
+        clonedSnakes.forEach(snake => {
+            snake.controls.forEach(key => {
                 if(key === e.keyCode)
                 {
+                    // ask again
                     setControls(e);
                 }
             });
@@ -347,6 +365,8 @@ function setControls(e)
 
         if(keys.length === 4)
         {
+            // Add controls to snake
+            clonedSnakes[playerCount].controls = keys;
             // Add the player to the lobby
             playerSnakes.push(clonedSnakes[playerCount]);
             // Add the player to the game
@@ -364,10 +384,10 @@ function setControls(e)
         {
             WinningScore = 999;
         }
-	else
-	{
-		WinningScore = 25;
-	}
+        else
+        {
+            WinningScore = 25;
+        }
     }
 }
 
@@ -634,54 +654,10 @@ function keyDown()
     {
         return;
     }
-    /*
-    //Arrows
-	// Arrow Up
-    if(event.keyCode==38){
-    	moveUp(snake2);
-    }
-    
-    // Arrow down
-    if(event.keyCode==40){
-    	moveDown(snake2);
-    }
-
-	// Arrow left
-    if(event.keyCode==37){
-    	moveLeft(snake2);
-    }
-    
-    // Arrow right
-    if(event.keyCode==39){
-    	moveRight(snake2);
-    }
-
-        //WASD
-    // W - up
-    if(event.keyCode==87){
-    	moveUp(snake1);
-    }
-    
-    // A - left
-    if(event.keyCode==65){
-    	moveLeft(snake1);
-    }
-
-	// S - down
-    if(event.keyCode==83){
-    	moveDown(snake1);
-    }
-    
-    // D - right
-    if(event.keyCode==68){
-    	moveRight(snake1);
-    }
-    */
-
+   
     for (let i = 0; i < aliveSnakes.length; i++) {
-        customMovement(aliveSnakes[i], buttonMappings[i]);        
+        customMovement(aliveSnakes[i], aliveSnakes[i].controls);        
     }
-
 }
 
 function customMovement(snake, controls)
@@ -748,6 +724,7 @@ function isTouchDevice() {
 function InitP1Controls()
 {
     buttonMappings.push([87, 83, 65, 68]);
+    clonedSnakes[playerCount].controls.push([87, 83, 65, 68]);
     playerSnakes.push(clonedSnakes[playerCount]);
     aliveSnakes.push(clonedSnakes[playerCount]);
     playerCount++;
