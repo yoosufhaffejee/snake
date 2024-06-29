@@ -127,8 +127,7 @@ function drawGame(){
     }
 
     clearScreen();
-    drawSnake();
-    moveSnake();
+    drawSnakes();
     drawApple();
     checkCollision();
     drawScore();
@@ -551,7 +550,7 @@ function drawScore(){
     ctx.fillRect(0, 0, canvas.width, canvas.height);
  }
  
- function drawSnake(){
+ function drawSnakes(){
     aliveSnakes.forEach(snake => {
         ctx.fillStyle=snake.BodyCol;
     
@@ -570,15 +569,15 @@ function drawScore(){
         }
     
         ctx.fillStyle=snake.headCol;
-        ctx.fillRect(snake.headX* tileCount,snake.headY* tileCount, tileSize,tileSize)
+        ctx.fillRect(snake.headX* tileCount,snake.headY* tileCount, tileSize,tileSize);
+
+        moveSnake(snake);
     });
  }
  
- function moveSnake(){
-    aliveSnakes.forEach(snake => {
-        snake.headX=snake.headX + snake.xVelocity;
-        snake.headY=snake.headY+ snake.yVelocity;
-    });
+ function moveSnake(snake){
+    snake.headX += snake.xVelocity;
+    snake.headY += snake.yVelocity;
  }
  
  function drawApple(){
@@ -780,4 +779,4 @@ function handleTouchMove(evt) {
     yDown = null;
 };
 
- drawGame(); 
+drawGame(); 
