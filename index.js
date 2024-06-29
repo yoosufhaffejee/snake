@@ -197,7 +197,7 @@ function isGameOver(){
 
                 if (snake.score > otherSnake.score)
                 {
-                    index = aliveSnakes.indexOf(otherSnake);
+                    let index = aliveSnakes.indexOf(otherSnake);
                     aliveSnakes.splice(index, 1);
                 }
                 else if(snake.score < otherSnake.score)
@@ -207,10 +207,10 @@ function isGameOver(){
                 }
                 else
                 {
-                    index = aliveSnakes.indexOf(otherSnake);
+                    let index = aliveSnakes.indexOf(otherSnake);
                     aliveSnakes.splice(index, 1);
 
-                    let index = aliveSnakes.indexOf(snake);
+                    index = aliveSnakes.indexOf(snake);
                     aliveSnakes.splice(index, 1);
                 }
 
@@ -587,16 +587,9 @@ function drawScore(){
         apple = new food("red", randomPosition(), randomPosition());
     	AppleInitialized = true;
     }
-
-        // apple.x = tileCount-1;
-        // apple.y = tileCount-1;
-        // ctx.fillStyle="green";
-        // ctx.fillRect(apple.x*tileCount, apple.y*tileCount, tileSize, tileSize)
-        // apple.x = tileCount-2;
-        // apple.y = tileCount-2;
-
-        ctx.fillStyle= apple.col;
-        ctx.fillRect(apple.x*tileCount, apple.y*tileCount, tileSize, tileSize)
+    
+    ctx.fillStyle= apple.col;
+    ctx.fillRect(apple.x*tileCount, apple.y*tileCount, tileSize, tileSize)
  }
  
  function randomPosition()
