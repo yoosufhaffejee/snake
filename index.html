@@ -7,18 +7,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>snake game</title>
     <link rel="stylesheet" href="./style.css" />
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 
 <body>
+    <!-- Multiplayer Lobby -->
+    <div id="lobbyModal" class="modal" style="display:block; z-index: 20; background-color: #1e1e1e;">
+        <div class="modal-content settings-content" style="text-align:center;">
+            <h1 style="color:#4CAF50; margin-bottom: 5px;">SNAKE</h1>
+            <p style="margin-bottom: 25px; color: #aaa;">Local & Online Multiplayer</p>
+            
+            <button class="btn" style="width:100%; margin-bottom:15px;" onclick="startHost()">Start / Host Game</button>
+            <button class="btn" style="width:100%; margin-bottom:15px; background-color: #777;" onclick="startOffline()">Play Offline</button>
+            
+            <div style="margin: 20px 0; border-top: 1px solid #444; padding-top: 20px;">
+                <input type="text" id="joinInput" placeholder="Enter Room ID" maxlength="4" style="width:100%; padding: 10px; box-sizing:border-box; margin-bottom:10px; border-radius: 5px; border: none; text-transform: uppercase; text-align: center; font-size: 18px; font-weight: bold; letter-spacing: 2px;">
+                <button class="btn" style="width:100%; background-color:#2196F3;" onclick="joinGame()">Join Game</button>
+            </div>
+        </div>
+    </div>
+
     <div id="top-bar">
         <div id="scoreboard"></div>
-        <button id="btnSettings" class="btn-icon" type="button" onclick="openSettings()">⚙️</button>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <div id="roomIdDisplay" style="background:#333; padding: 5px 10px; border-radius: 5px; font-weight:bold; font-size:12px; display:none;"></div>
+            <button id="btnSettings" class="btn-icon" type="button" onclick="openSettings()">⚙️</button>
+        </div>
     </div>
 
     <canvas id="game"></canvas>
     
     <div id="controls-bar">
-        <button id="btnAdd" class="btn" type="button" onclick="addSnake()">Add Snake</button>
+        <button id="btnAdd" class="btn" type="button" onclick="addSnake()">Add Local Snake</button>
         <p hidden style="color:red" id="txtPause">Game paused! Press 'Esc' to continue...</p>
     </div>
 
@@ -30,27 +50,42 @@
         </div>
     </div>
 
+    
+    <!-- Game Over Modal -->
+    <div id="gameOverModal" class="modal" style="z-index: 30;">
+        <div class="modal-content" style="text-align: center; background-color: rgba(30, 30, 30, 0.95); border: 2px solid #444; border-radius: 15px;">
+            <h1 id="gameOverTitle" style="color: white; font-size: 40px; margin-bottom: 10px; text-shadow: 2px 2px 4px #000;">Game Over!</h1>
+            <h2 id="gameOverMessage" style="color: #ff9800; font-size: 28px; margin-bottom: 25px; text-shadow: 1px 1px 2px #000;">Player 1 Wins!</h2>
+            <button id="btnRestart" class="btn" style="width:100%; background-color: #4CAF50; font-size: 20px; padding: 12px;" onclick="handleRestart()">Play Again</button>
+        </div>
+    </div>
+
     <!-- Settings Modal -->
     <div id="settingsModal" class="modal">
         <div class="modal-content settings-content">
             <h2>Settings</h2>
-            <div class="setting-row">
+            <div class="setting-row" id="rowSpeed">
                 <label>Game Speed</label>
                 <input type="range" id="inptSpeed" min="5" max="30" value="12" onchange="updateSettings()">
             </div>
-            <div class="setting-row">
+            <div class="setting-row" id="rowWalls">
                 <label>Solid Walls</label>
                 <input type="checkbox" id="inptWalls" onchange="updateSettings()">
             </div>
-            <div class="setting-row">
+            <div class="setting-row" id="rowWinScore">
                 <label>Winning Score (Multiplayer)</label>
                 <input type="number" id="inptWinScore" value="25" min="1" onchange="updateSettings()">
+            </div>
+                        <div class="setting-row" id="rowMidGame">
+                <label>Allow Mid-Game Join</label>
+                <input type="checkbox" id="inptMidGame" onchange="updateSettings()">
             </div>
             <div class="setting-row">
                 <label>Show D-Pad</label>
                 <input type="checkbox" id="inptDpad" onchange="updateSettings()">
             </div>
-            <button class="btn" onclick="closeSettings()">Close</button>
+            <button class="btn" onclick="closeSettings()" style="margin-bottom: 10px; width: 100%;">Close</button>
+            <button class="btn" style="background-color: #f44336; width: 100%;" onclick="location.reload()">Quit to Main Menu</button>
         </div>
     </div>
 

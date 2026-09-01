@@ -5,7 +5,8 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  overscroll-behavior: contain;
+  overscroll-behavior: none;
+  touch-action: none;
   background-color: #1e1e1e;
   color: white;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
