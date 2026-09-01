@@ -256,7 +256,12 @@ window.openSettings = function() {
         document.getElementById('rowSpeed').style.display = 'flex';
         document.getElementById('rowWalls').style.display = 'flex';
         document.getElementById('rowWinScore').style.display = 'flex';
-        document.getElementById('rowMidGame').style.display = 'flex';
+        
+        if (networkMode === 'offline') {
+            document.getElementById('rowMidGame').style.display = 'none';
+        } else {
+            document.getElementById('rowMidGame').style.display = 'flex';
+        }
         
         let disableHostSettings = (networkMode === 'host' && started && !gameOver);
         document.getElementById('inptSpeed').disabled = disableHostSettings;
@@ -910,3 +915,10 @@ function handleTouchMove(evt) {
 
 // Initial Settings sync
 window.updateSettings();
+
+
+// Hide the 'Add Local Snake' button on touch devices since they lack keyboards for local co-op
+if (isTouchDevice()) {
+    let btnAdd = document.getElementById('btnAdd');
+    if(btnAdd) btnAdd.style.display = 'none';
+}
