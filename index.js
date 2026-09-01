@@ -438,7 +438,8 @@ function drawGame(){
             gameOver: gameOver,
             GameOverText: GameOverText,
             waitingIndices: waitingIndices,
-            isPaused: isPaused
+            isPaused: isPaused,
+            started: started
         };
         for(let peerId in hostConnections) {
             hostConnections[peerId].conn.send(state);
@@ -457,6 +458,7 @@ function pause()
         snake.xVelocity = 0;
         snake.yVelocity = 0;
     });
+    started = false;
     txtPause.innerText = "Game paused! Press 'Esc' to continue...";
     txtPause.hidden = false;
 }
@@ -475,7 +477,7 @@ function isGameOver(){
             aliveSnakes.forEach(snake => {
                 if (snake.yVelocity !== 0 || snake.xVelocity !== 0) countMovingPlayers++;
             });
-            if(countMovingPlayers === aliveSnakes.length) started = true;
+            if(countMovingPlayers === aliveSnakes.length && aliveSnakes.length > 0) started = true;
         }
 
         let otherSnakes = aliveSnakes.slice();
@@ -537,6 +539,7 @@ function isGameOver(){
 
 function CheckBodyColission(snake)
 {
+    if (!started) return;
     for(let i=0; i<snake.parts.length;i++){
         let part=snake.parts[i];
         if(part.x===snake.headX && part.y===snake.headY){
@@ -701,14 +704,17 @@ function drawSnakes(){
             ctx.fillRect(part.x *gridSpacing, part.y *gridSpacing, tileSize,tileSize);
         }
         
-        snake.parts.push(new snakePart(snake.headX,snake.headY));
-        if(snake.parts.length>snake.tailLength){
-            snake.parts.shift();
+        if (started) {
+            snake.parts.push(new snakePart(snake.headX,snake.headY));
+            if(snake.parts.length>snake.tailLength){
+                snake.parts.shift();
+            }
         }
     
         ctx.fillStyle=snake.headCol;
         ctx.fillRect(snake.headX* gridSpacing,snake.headY* gridSpacing, tileSize,tileSize);
-        moveSnake(snake);
+        
+        if (started) moveSnake(snake);
     });
 }
  
