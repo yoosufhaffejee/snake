@@ -10,9 +10,17 @@
 </head>
 
 <body>
-    <canvas id="game" width="400" height="400"></canvas>
-    <button id="btnAdd" class="btn" type="button" onclick="addSnake()">Add Snake</button>
-    <p hidden style="color:red" id="txtPause">Game pasued! Press 'Esc' to continue...</p>
+    <div id="top-bar">
+        <div id="scoreboard"></div>
+        <button id="btnSettings" class="btn-icon" type="button" onclick="openSettings()">⚙️</button>
+    </div>
+
+    <canvas id="game"></canvas>
+    
+    <div id="controls-bar">
+        <button id="btnAdd" class="btn" type="button" onclick="addSnake()">Add Snake</button>
+        <p hidden style="color:red" id="txtPause">Game paused! Press 'Esc' to continue...</p>
+    </div>
 
     <!-- The Modal -->
     <div id="myModal" class="modal">
@@ -20,6 +28,41 @@
         <div class="modal-content">
             <p id="modalText">Tap a key</p>
         </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content settings-content">
+            <h2>Settings</h2>
+            <div class="setting-row">
+                <label>Game Speed</label>
+                <input type="range" id="inptSpeed" min="5" max="30" value="12" onchange="updateSettings()">
+            </div>
+            <div class="setting-row">
+                <label>Solid Walls</label>
+                <input type="checkbox" id="inptWalls" onchange="updateSettings()">
+            </div>
+            <div class="setting-row">
+                <label>Winning Score (Multiplayer)</label>
+                <input type="number" id="inptWinScore" value="25" min="1" onchange="updateSettings()">
+            </div>
+            <div class="setting-row">
+                <label>Show D-Pad</label>
+                <input type="checkbox" id="inptDpad" onchange="updateSettings()">
+            </div>
+            <button class="btn" onclick="closeSettings()">Close</button>
+        </div>
+    </div>
+
+    <!-- D-Pad -->
+    <div id="dpad" class="dpad" style="display:none;">
+        <div class="dpad-row"><button class="dpad-btn" onpointerdown="simKey(38)">▲</button></div>
+        <div class="dpad-row">
+            <button class="dpad-btn" onpointerdown="simKey(37)">◀</button>
+            <div style="width:50px"></div>
+            <button class="dpad-btn" onpointerdown="simKey(39)">▶</button>
+        </div>
+        <div class="dpad-row"><button class="dpad-btn" onpointerdown="simKey(40)">▼</button></div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
