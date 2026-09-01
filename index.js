@@ -222,7 +222,7 @@ window.joinGame = function() {
             roomIDDisplay.style.display = 'block';
             roomIDDisplay.innerText = "Connected to: " + roomId;
             lobbyModal.style.display = 'none';
-            // (btnAdd remains visible for Host to add local players) 
+            document.getElementById('btnAdd').style.display = 'none';
         });
         clientConn.on('data', data => {
             if (data.type === 'welcome') {
@@ -365,6 +365,8 @@ function generateScoreHTML(snakeList, myIndices) {
         let label = '';
         if (isMe) {
             label = (networkMode === 'host' || networkMode === 'offline') ? ' (Local)' : ' (You)';
+        } else if (networkMode === 'client' && index === 0) {
+            label = ' (Host)';
         }
         html += `<div class="score-badge" style="${style}">${snake.name}${label}: ${snake.score}</div>`;
     });
@@ -390,7 +392,7 @@ function renderNetworkState(state) {
         ctx.fillRect(snake.headX* gridSpacing,snake.headY* gridSpacing, tileSize,tileSize);
     });
 
-    document.getElementById('scoreboard').innerHTML = generateScoreHTML(state.playerSnakes, mySnakeIndex);
+    document.getElementById('scoreboard').innerHTML = generateScoreHTML(state.playerSnakes, mySnakeIndices);
 
     if (state.gameOver && state.GameOverText) {
         displayGameOverText(state.aliveSnakes, state.playerSnakes);
