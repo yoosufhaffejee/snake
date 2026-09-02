@@ -286,40 +286,37 @@ window.startHost = function() {
     });
     
     peer.on('connection', conn => {
-        let sIndex = getAvailableSnakeIndex();
-        if(sIndex === -1) {
-            hostConnections[conn.peer] = { conn: conn, snakeIndex: -1, isWaiting: false, isSpectator: true };
-            conn.on('open', () => {
-                conn.send({ type: 'welcome', snakeIndex: -1, isSpectator: true });
-            });
-            return;
-        }
-        
-        let remoteSnake = clonedSnakes[sIndex];
-        // Clean up ghost state
-        remoteSnake.parts = [new snakePart(remoteSnake.headX, remoteSnake.headY)];
-        remoteSnake.tailLength = 1;
-        remoteSnake.score = 0;
-        remoteSnake.controls = [-1, -1, -1, -1]; 
-        remoteSnake.xVelocity = 0;
-        remoteSnake.yVelocity = 0;
-        
-        let waiting = false;
-        if (started && !allowMidGameJoin && !GameOverText) {
-            waiting = true;
-        } else {
-            if (!playerSnakes.includes(remoteSnake)) playerSnakes.push(remoteSnake);
-            if (!aliveSnakes.includes(remoteSnake)) aliveSnakes.push(remoteSnake);
-        }
-        
-        if (!started) {
-            if(getActivePlayerCount() <= 1) WinningScore = 999;
-            else WinningScore = parseInt(document.getElementById('inptWinScore').value);
-        }
-        
-        hostConnections[conn.peer] = { conn: conn, snakeIndex: sIndex, snake: remoteSnake, isWaiting: waiting };
-        
         conn.on('open', () => {
+            let sIndex = getAvailableSnakeIndex();
+            if(sIndex === -1) {
+                hostConnections[conn.peer] = { conn: conn, snakeIndex: -1, isWaiting: false, isSpectator: true };
+                conn.send({ type: 'welcome', snakeIndex: -1, isSpectator: true });
+                return;
+            }
+            
+            let remoteSnake = clonedSnakes[sIndex];
+            // Clean up ghost state
+            remoteSnake.parts = [new snakePart(remoteSnake.headX, remoteSnake.headY)];
+            remoteSnake.tailLength = 1;
+            remoteSnake.score = 0;
+            remoteSnake.controls = [-1, -1, -1, -1]; 
+            remoteSnake.xVelocity = 0;
+            remoteSnake.yVelocity = 0;
+            
+            let waiting = false;
+            if (started && !allowMidGameJoin && !GameOverText) {
+                waiting = true;
+            } else {
+                if (!playerSnakes.includes(remoteSnake)) playerSnakes.push(remoteSnake);
+                if (!aliveSnakes.includes(remoteSnake)) aliveSnakes.push(remoteSnake);
+            }
+            
+            if (!started) {
+                if(getActivePlayerCount() <= 1) WinningScore = 999;
+                else WinningScore = parseInt(document.getElementById('inptWinScore').value);
+            }
+            
+            hostConnections[conn.peer] = { conn: conn, snakeIndex: sIndex, snake: remoteSnake, isWaiting: waiting };
             conn.send({ type: 'welcome', snakeIndex: sIndex });
             // Instantly send current state in case game is paused or on Game Over screen
             conn.send({
@@ -380,7 +377,7 @@ window.joinGame = function() {
         peer.destroy();
     }
     
-    peer = new Peer();
+    peer = new Peer(peerConfig);
     peer.on('open', () => {
         clientConn = peer.connect('SNAKE-' + roomId);
         clientConn.on('open', () => {
