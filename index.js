@@ -269,13 +269,25 @@ window.startOffline = function() {
     drawGame();
 }
 
+let peerConfig = {
+    config: {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+            { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+            { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+        ]
+    }
+};
+
 window.startHost = function() {
     networkMode = 'host';
     requestMobileFullscreen();
     // (btnAdd remains visible for Host to add local players)
     
     let shortId = Math.random().toString(36).substring(2, 6).toUpperCase();
-    peer = new Peer('SNAKE-' + shortId); 
+    peer = new Peer('SNAKE-' + shortId, peerConfig); 
     
     peer.on('open', id => {
         roomIDDisplay.style.display = 'block';
