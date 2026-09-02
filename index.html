@@ -76,7 +76,27 @@
                 <label>Winning Score (Multiplayer)</label>
                 <input type="number" id="inptWinScore" value="25" min="1" onchange="updateSettings()">
             </div>
-                        <div class="setting-row" id="rowMidGame">
+                        <div class="setting-row" id="rowGrid">
+                <label>Show Grid</label>
+                <input type="checkbox" id="inptGrid">
+            </div>
+            <div class="setting-row">
+                <label>Snake Eyes</label>
+                <input type="checkbox" id="inptEyes">
+            </div>
+            <div class="setting-row">
+                <label>Continuous Swipe</label>
+                <input type="checkbox" id="inptContSwipe">
+            </div>
+            <div class="setting-row">
+                <label>Sound Effects</label>
+                <input type="checkbox" id="inptSfx" checked>
+            </div>
+            <div class="setting-row">
+                <label>Background Music</label>
+                <input type="checkbox" id="inptMusic">
+            </div>
+            <div class="setting-row" id="rowMidGame">
                 <label>Allow Mid-Game Join</label>
                 <input type="checkbox" id="inptMidGame" onchange="updateSettings()">
             </div>

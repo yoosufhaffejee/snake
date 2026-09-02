@@ -35,6 +35,132 @@ class food{
 
 const canvas=document.getElementById('game');
 const ctx=canvas.getContext('2d');
+
+function applyRetinaFix() {
+    let ratio = window.devicePixelRatio || 1;
+    canvas.width = 600 * ratio;
+    canvas.height = 600 * ratio;
+    ctx.scale(ratio, ratio);
+}
+applyRetinaFix();
+
+let audioCtx = null;
+let frameAudio = [];
+
+function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playTone(freq, type, duration, vol=0.1) {}
+
+function playEat() {
+    if (!document.getElementById('inptSfx') || !document.getElementById('inptSfx').checked) return;
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine'; // Super soft sine wave
+    osc.frequency.setValueAtTime(1046.50, audioCtx.currentTime); // C6
+    osc.frequency.exponentialRampToValueAtTime(1318.51, audioCtx.currentTime + 0.1); // E6
+    
+    gain.gain.setValueAtTime(0, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.05, audioCtx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.1);
+}
+
+function playCrash() {
+    if (!document.getElementById('inptSfx') || !document.getElementById('inptSfx').checked) return;
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle'; // Less harsh than sawtooth
+    osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.3);
+    
+    gain.gain.setValueAtTime(0, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.3);
+}
+
+function playGameOver() {
+    if (!document.getElementById('inptSfx') || !document.getElementById('inptSfx').checked) return;
+    if (!audioCtx) return;
+    [60, 56, 53, 48].forEach((note, i) => {
+        setTimeout(() => {
+            if(!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(440 * Math.pow(2, (note - 69) / 12), audioCtx.currentTime);
+            
+            gain.gain.setValueAtTime(0, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.4);
+        }, i * 250);
+    });
+}
+
+const _ = 0;
+const tracks = [
+    // Track 1: Bouncy & Cheerful (C Major Pentatonic)
+    [60, _, 64, 67, _, 64, 69, _, 67, _, 64, 62, 60, _, _, _],
+    // Track 2: Relaxed & Dreamy (Ambient)
+    [65, _, 64, _, 60, _, _, _, 65, _, 64, _, 67, _, _, _],
+    // Track 3: Driving Arpeggios
+    [69, 72, 76, 72, 67, 71, 74, 71, 65, 69, 72, 69, 64, 68, 71, 68]
+];
+let currentTrack = tracks[Math.floor(Math.random() * tracks.length)];
+let noteIdx = 0;
+
+setInterval(() => {
+    let musicInpt = document.getElementById('inptMusic');
+    if (musicInpt && musicInpt.checked && started && !isPaused && !gameOver && audioCtx && audioCtx.state === 'running') {
+        let note = currentTrack[noteIdx % currentTrack.length];
+        if (note !== 0) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const filter = audioCtx.createBiquadFilter();
+            
+            osc.type = 'triangle'; // Soft instrument
+            osc.frequency.setValueAtTime(440 * Math.pow(2, (note - 69) / 12), audioCtx.currentTime);
+            
+            filter.type = 'lowpass';
+            filter.frequency.value = 1200; // Roll off high frequencies
+            
+            // Soft ADSR envelope
+            gain.gain.setValueAtTime(0, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 0.03); // gentle attack
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25); // long pleasant decay
+            
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+        noteIdx++;
+    }
+}, 160); // slightly slower tempo (160ms) for a more relaxed feel
+
+document.addEventListener('click', () => { initAudio(); }, {once:true});
+document.addEventListener('touchstart', () => { initAudio(); }, {once:true});
+
 const modal = document.getElementById("myModal");
 const modalText = document.getElementById("modalText");
 const btn = document.getElementById("btnAdd");
@@ -58,7 +184,13 @@ let gameOver=false;
 let buttonMappings = [];
 
 function getActivePlayerCount() {
-    return mySnakeIndices.length + (networkMode === 'host' ? Object.keys(hostConnections).length : 0);
+    let remoteCount = 0;
+    if (networkMode === 'host') {
+        for (let p in hostConnections) {
+            if (hostConnections[p].snakeIndex !== -1) remoteCount++;
+        }
+    }
+    return mySnakeIndices.length + remoteCount;
 }
 
 function getAvailableSnakeIndex() {
@@ -156,9 +288,9 @@ window.startHost = function() {
     peer.on('connection', conn => {
         let sIndex = getAvailableSnakeIndex();
         if(sIndex === -1) {
+            hostConnections[conn.peer] = { conn: conn, snakeIndex: -1, isWaiting: false, isSpectator: true };
             conn.on('open', () => {
-                conn.send({ type: 'error', message: 'Room full' });
-                setTimeout(() => conn.close(), 1000);
+                conn.send({ type: 'welcome', snakeIndex: -1, isSpectator: true });
             });
             return;
         }
@@ -180,8 +312,10 @@ window.startHost = function() {
             if (!aliveSnakes.includes(remoteSnake)) aliveSnakes.push(remoteSnake);
         }
         
-        if(getActivePlayerCount() <= 1) WinningScore = 999;
-        else WinningScore = parseInt(document.getElementById('inptWinScore').value);
+        if (!started) {
+            if(getActivePlayerCount() <= 1) WinningScore = 999;
+            else WinningScore = parseInt(document.getElementById('inptWinScore').value);
+        }
         
         hostConnections[conn.peer] = { conn: conn, snakeIndex: sIndex, snake: remoteSnake, isWaiting: waiting };
         
@@ -216,6 +350,10 @@ window.startHost = function() {
         conn.on('close', () => {
             if(hostConnections[conn.peer]) {
                 let s = hostConnections[conn.peer].snake;
+                if (!s) {
+                    delete hostConnections[conn.peer];
+                    return;
+                }
                 let idx = aliveSnakes.indexOf(s);
                 if(idx > -1) {
                     s.parts.forEach((part, i) => {
@@ -253,7 +391,8 @@ window.joinGame = function() {
         });
         clientConn.on('data', data => {
             if (data.type === 'welcome') {
-                mySnakeIndices = [data.snakeIndex];
+                if (data.isSpectator) mySnakeIndices = [];
+                else mySnakeIndices = [data.snakeIndex];
             } else if (data.type === 'state') {
                 renderNetworkState(data);
             } else if (data.type === 'error') {
@@ -290,11 +429,20 @@ window.openSettings = function() {
         document.getElementById('rowSpeed').style.display = 'none';
         document.getElementById('rowWalls').style.display = 'none';
         document.getElementById('rowWinScore').style.display = 'none';
+        let rowGrid = document.getElementById('rowGrid');
+        if(rowGrid) rowGrid.style.display = 'none';
         document.getElementById('rowMidGame').style.display = 'none';
     } else {
         document.getElementById('rowSpeed').style.display = 'flex';
         document.getElementById('rowWalls').style.display = 'flex';
-        document.getElementById('rowWinScore').style.display = 'flex';
+        let rowGrid = document.getElementById('rowGrid');
+        if(rowGrid) rowGrid.style.display = 'flex';
+        
+        if (networkMode === 'offline' && getActivePlayerCount() <= 1) {
+            document.getElementById('rowWinScore').style.display = 'none';
+        } else {
+            document.getElementById('rowWinScore').style.display = 'flex';
+        }
         
         if (networkMode === 'offline') {
             document.getElementById('rowMidGame').style.display = 'none';
@@ -374,7 +522,9 @@ function reset()
     if (networkMode === 'host' || networkMode === 'offline') {
         mySnakeIndices.forEach(idx => activeIndices.push(idx));
         for(let peerId in hostConnections) {
-            activeIndices.push(hostConnections[peerId].snakeIndex);
+            if (hostConnections[peerId].snakeIndex !== -1) {
+                activeIndices.push(hostConnections[peerId].snakeIndex);
+            }
         }
     } else {
         // Clients don't construct the logic list, but we can just use the previous length to avoid errors
@@ -393,7 +543,9 @@ function reset()
         for(let peerId in hostConnections) {
             hostConnections[peerId].isWaiting = false;
             let sIndex = hostConnections[peerId].snakeIndex;
-            hostConnections[peerId].snake = clonedSnakes[sIndex];
+            if (sIndex !== -1) {
+                hostConnections[peerId].snake = clonedSnakes[sIndex];
+            }
         }
     }
 }
@@ -419,6 +571,14 @@ function generateScoreHTML(snakeList, myIndices) {
 
 // Client specific render
 function renderNetworkState(state) {
+    window.currentState = state;
+    if (state.audioEvents) {
+        state.audioEvents.forEach(evt => {
+            if (evt === 'eat') playEat();
+            if (evt === 'crash') playCrash();
+            if (evt === 'gameover') playGameOver();
+        });
+    }
     clearScreen();
     
     state.apples.forEach(apple => {
@@ -434,6 +594,22 @@ function renderNetworkState(state) {
         }
         ctx.fillStyle=snake.headCol;
         ctx.fillRect(snake.headX* gridSpacing,snake.headY* gridSpacing, tileSize,tileSize);
+        
+        let eyesInpt = document.getElementById('inptEyes');
+        if (eyesInpt && eyesInpt.checked) {
+            ctx.fillStyle = 'white';
+            let ex1, ey1, ex2, ey2;
+            let hx = snake.headX * gridSpacing;
+            let hy = snake.headY * gridSpacing;
+            let ts = tileSize;
+            if (snake.lastXVelocity === -1) { ex1 = hx+4; ey1 = hy+4; ex2 = hx+4; ey2 = hy+ts-8; }
+            else if (snake.lastYVelocity === -1) { ex1 = hx+4; ey1 = hy+4; ex2 = hx+ts-8; ey2 = hy+4; }
+            else if (snake.lastYVelocity === 1) { ex1 = hx+4; ey1 = hy+ts-8; ex2 = hx+ts-8; ey2 = hy+ts-8; }
+            else { ex1 = hx+ts-8; ey1 = hy+4; ex2 = hx+ts-8; ey2 = hy+ts-8; } 
+            ctx.fillRect(ex1, ey1, 4, 4);
+            ctx.fillRect(ex2, ey2, 4, 4);
+        }
+
     });
 
     document.getElementById('scoreboard').innerHTML = generateScoreHTML(state.playerSnakes, mySnakeIndices);
@@ -487,8 +663,12 @@ function drawGame(){
             GameOverText: GameOverText,
             waitingIndices: waitingIndices,
             isPaused: isPaused,
-            started: started
+            started: started,
+            solidWalls: solidWalls,
+            showGrid: document.getElementById('inptGrid') ? document.getElementById('inptGrid').checked : false,
+            audioEvents: typeof frameAudio !== 'undefined' ? frameAudio : []
         };
+        if (typeof frameAudio !== 'undefined') frameAudio = [];
         for(let peerId in hostConnections) {
             hostConnections[peerId].conn.send(state);
         }
@@ -552,6 +732,7 @@ function isGameOver(){
         });
 
         if(snake.score >= WinningScore && getActivePlayerCount() > 1) {
+            if (typeof frameAudio !== 'undefined') frameAudio.push('gameover'); if(networkMode !== 'client') playGameOver();
             gameOver=true;
             if(isTouchDevice() && !window.touchRestartTimeout) {
                 window.touchRestartTimeout = setTimeout(x => { window.touchRestartTimeout=null; reset(); drawGame(); }, 5000);
@@ -574,6 +755,7 @@ function isGameOver(){
     });
     
     if (getActivePlayerCount() > 1 && started && aliveSnakes.length <= 1) {
+        if (typeof frameAudio !== 'undefined') frameAudio.push('gameover'); if(networkMode !== 'client') playGameOver();
         gameOver = true;
         if(isTouchDevice() && !window.touchRestartTimeout) {
             window.touchRestartTimeout = setTimeout(x => { window.touchRestartTimeout=null; reset(); drawGame(); }, 5000);
@@ -591,7 +773,9 @@ function CheckBodyColission(snake)
     for(let i=0; i<snake.parts.length;i++){
         let part=snake.parts[i];
         if(part.x===snake.headX && part.y===snake.headY){
+            if (typeof frameAudio !== 'undefined') frameAudio.push('crash'); if(networkMode !== 'client') playCrash();
             if(getActivePlayerCount() <= 1) {
+                if (typeof frameAudio !== 'undefined') frameAudio.push('gameover'); if(networkMode !== 'client') playGameOver();
                 gameOver=true;
                 if(isTouchDevice() && !window.touchRestartTimeout) {
                     window.touchRestartTimeout = setTimeout(x => { window.touchRestartTimeout=null; reset(); drawGame(); }, 5000);
@@ -641,26 +825,43 @@ function setControls(e)
         if (keyAlreadyBound) return;
 
         keys.push(e.keyCode);
+        
+        let sIndex = getAvailableSnakeIndex();
+        if (sIndex === -1) {
+            keys = [];
+            modal.style.display = "none";
+            isPaused = false;
+            txtPause.hidden = true;
+            return;
+        }
 
-        if(keys.length === 1) modalText.textContent = clonedSnakes[playerCount].name + ": Tap key to bind 'Move Down'";
-        if(keys.length === 2) modalText.textContent = clonedSnakes[playerCount].name + ": Tap key to bind 'Move Left'";
-        if(keys.length === 3) modalText.textContent = clonedSnakes[playerCount].name + ": Tap key to bind 'Move Right'";
+        if(keys.length === 1) modalText.textContent = clonedSnakes[sIndex].name + ": Tap key to bind 'Move Down'";
+        if(keys.length === 2) modalText.textContent = clonedSnakes[sIndex].name + ": Tap key to bind 'Move Left'";
+        if(keys.length === 3) modalText.textContent = clonedSnakes[sIndex].name + ": Tap key to bind 'Move Right'";
 
         if(keys.length === 4) {
-            clonedSnakes[playerCount].controls = keys;
-            playerSnakes.push(clonedSnakes[playerCount]);
-            aliveSnakes.push(clonedSnakes[playerCount]);
-            if (networkMode !== 'client') mySnakeIndices.push(playerCount);
-            playerCount++;
+            clonedSnakes[sIndex].controls = keys;
+            clonedSnakes[sIndex].parts = [new snakePart(clonedSnakes[sIndex].headX, clonedSnakes[sIndex].headY)];
+            clonedSnakes[sIndex].tailLength = 1;
+            clonedSnakes[sIndex].score = 0;
+            clonedSnakes[sIndex].xVelocity = 0;
+            clonedSnakes[sIndex].yVelocity = 0;
+            
+            if (!playerSnakes.includes(clonedSnakes[sIndex])) playerSnakes.push(clonedSnakes[sIndex]);
+            if (!aliveSnakes.includes(clonedSnakes[sIndex])) aliveSnakes.push(clonedSnakes[sIndex]);
+            if (networkMode !== 'client') mySnakeIndices.push(sIndex);
             buttonMappings.push(keys);
+            
             keys = [];
             modal.style.display = "none";
             isPaused = false;
             txtPause.hidden = true;
         }
 
-        if(playerCount === 1) WinningScore = 999;
-        else WinningScore = parseInt(document.getElementById('inptWinScore').value);
+        if (!started) {
+            if(getActivePlayerCount() <= 1) WinningScore = 999;
+            else WinningScore = parseInt(document.getElementById('inptWinScore').value);
+        }
     }
 }
 
@@ -716,6 +917,7 @@ function wallCollision(snake, toRemove)
     else if(snake.headY===tileCount) dead = true;
 
     if (dead) {
+        if (typeof frameAudio !== 'undefined') frameAudio.push('crash'); if(networkMode !== 'client') playCrash();
         if(getActivePlayerCount() <= 1) {
             gameOver=true;
             if(isTouchDevice() && !window.touchRestartTimeout) {
@@ -759,6 +961,21 @@ function drawSnakes(){
     
         ctx.fillStyle=snake.headCol;
         ctx.fillRect(snake.headX* gridSpacing,snake.headY* gridSpacing, tileSize,tileSize);
+        
+        let eyesInpt = document.getElementById('inptEyes');
+        if (eyesInpt && eyesInpt.checked) {
+            ctx.fillStyle = 'white';
+            let ex1, ey1, ex2, ey2;
+            let hx = snake.headX * gridSpacing;
+            let hy = snake.headY * gridSpacing;
+            let ts = tileSize;
+            if (snake.lastXVelocity === -1) { ex1 = hx+4; ey1 = hy+4; ex2 = hx+4; ey2 = hy+ts-8; }
+            else if (snake.lastYVelocity === -1) { ex1 = hx+4; ey1 = hy+4; ex2 = hx+ts-8; ey2 = hy+4; }
+            else if (snake.lastYVelocity === 1) { ex1 = hx+4; ey1 = hy+ts-8; ex2 = hx+ts-8; ey2 = hy+ts-8; }
+            else { ex1 = hx+ts-8; ey1 = hy+4; ex2 = hx+ts-8; ey2 = hy+ts-8; } 
+            ctx.fillRect(ex1, ey1, 4, 4);
+            ctx.fillRect(ex2, ey2, 4, 4);
+        }
         
         moveSnake(snake);
     });
@@ -819,6 +1036,7 @@ function checkCollision(){
         for(let i = apples.length - 1; i >= 0; i--) {
             let apple = apples[i];
             if(apple.x==snake.headX && apple.y==snake.headY){
+                if (typeof frameAudio !== 'undefined') frameAudio.push('eat'); if(networkMode !== 'client') playEat();
                 apples.splice(i, 1);
                 
                 if (apple.type === "golden") {
@@ -927,6 +1145,7 @@ function handleTouchStart(evt) {
     yDown = firstTouch.clientY;                                      
 }
 
+let lastTouchKey = -1;
 function handleTouchMove(evt) {
     if (evt.target.tagName === 'BUTTON' || evt.target.tagName === 'INPUT') return;
     evt.preventDefault();
@@ -937,22 +1156,36 @@ function handleTouchMove(evt) {
 
     var xDiff = xDown - xUp;
     var yDiff = yDown - yUp;
-
+    
+    if (Math.abs(xDiff) < 30 && Math.abs(yDiff) < 30) return;
+    
+    let key = -1;
     if (Math.abs(xDiff) > Math.abs(yDiff)) {
-        if (networkMode === 'client') {
-            if (clientConn && clientConn.open) clientConn.send({ type: 'input', key: xDiff > 0 ? 37 : 39 });
-        } else {
-            if (xDiff > 0) moveLeft(playerSnakes[0]); else moveRight(playerSnakes[0]);
+        key = xDiff > 0 ? 37 : 39;
+        if (networkMode !== 'client') {
+            if (key===37) moveLeft(playerSnakes[0]); else moveRight(playerSnakes[0]);
         }
     } else {
-        if (networkMode === 'client') {
-            if (clientConn && clientConn.open) clientConn.send({ type: 'input', key: yDiff > 0 ? 38 : 40 });
-        } else {
-            if (yDiff > 0) moveUp(playerSnakes[0]); else moveDown(playerSnakes[0]);
+        key = yDiff > 0 ? 38 : 40;
+        if (networkMode !== 'client') {
+            if (key===38) moveUp(playerSnakes[0]); else moveDown(playerSnakes[0]);
         }
     }
-    xDown = null;
-    yDown = null;
+    
+    if (networkMode === 'client' && key !== lastTouchKey) {
+        if (clientConn && clientConn.open) clientConn.send({ type: 'input', key: key });
+        lastTouchKey = key;
+    }
+    
+    let contSwipe = document.getElementById('inptContSwipe');
+    if (contSwipe && contSwipe.checked) {
+        xDown = xUp;
+        yDown = yUp;
+    } else {
+        xDown = null;
+        yDown = null;
+        lastTouchKey = -1; // reset on new swipe gesture
+    }
 }
 
 // Initial Settings sync
