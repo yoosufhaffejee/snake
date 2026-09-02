@@ -969,8 +969,31 @@ function drawScore(){
 }
 
 function clearScreen(){
-    ctx.fillStyle= 'black';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, 600, 600);
+    
+    let showGrid = false;
+    let isSolid = false;
+    let gridInpt = document.getElementById('inptGrid');
+    
+    if (networkMode === 'client' && window.currentState) {
+        showGrid = window.currentState.showGrid;
+        isSolid = window.currentState.solidWalls;
+    } else if (networkMode !== 'client') {
+        if(gridInpt) showGrid = gridInpt.checked;
+        isSolid = typeof solidWalls !== 'undefined' ? solidWalls : false;
+    }
+    
+    if (showGrid) {
+        canvas.classList.add('show-grid');
+    } else {
+        canvas.classList.remove('show-grid');
+    }
+    
+    if (isSolid) {
+        ctx.strokeStyle = '#444444'; 
+        ctx.lineWidth = 10;
+        ctx.strokeRect(5, 5, 590, 590);
+    }
 }
  
 function drawSnakes(){
