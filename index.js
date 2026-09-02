@@ -990,9 +990,9 @@ function clearScreen(){
     }
     
     if (isSolid) {
-        ctx.strokeStyle = '#444444'; 
-        ctx.lineWidth = 10;
-        ctx.strokeRect(5, 5, 590, 590);
+        canvas.classList.add('solid-walls');
+    } else {
+        canvas.classList.remove('solid-walls');
     }
 }
  
