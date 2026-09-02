@@ -383,6 +383,12 @@ window.joinGame = function() {
     if(!roomId) return;
     networkMode = 'client';
     
+    let btnJoin = document.querySelector('button[onclick="joinGame()"]');
+    if (btnJoin) {
+        btnJoin.innerText = "Connecting...";
+        btnJoin.disabled = true;
+    }
+    
     requestMobileFullscreen(); // Must be called synchronously with user click
     
     if (peer) {
@@ -392,11 +398,21 @@ window.joinGame = function() {
     peer = new Peer(peerConfig);
     peer.on('open', () => {
         clientConn = peer.connect('SNAKE-' + roomId);
+        
+        let connectionTimeout = setTimeout(() => {
+            alert("Connection timed out. Your network/carrier may be blocking P2P connections.");
+            if (peer) { peer.destroy(); peer = null; }
+            networkMode = 'offline';
+            if (btnJoin) { btnJoin.innerText = "Join Game"; btnJoin.disabled = false; }
+        }, 10000);
+
         clientConn.on('open', () => {
+            clearTimeout(connectionTimeout);
             roomIDDisplay.style.display = 'block';
             roomIDDisplay.innerText = "Connected to: " + roomId;
             lobbyModal.style.display = 'none';
             document.getElementById('btnAdd').style.display = 'none';
+            if (btnJoin) { btnJoin.innerText = "Join Game"; btnJoin.disabled = false; }
         });
         clientConn.on('data', data => {
             if (data.type === 'welcome') {
@@ -425,6 +441,8 @@ window.joinGame = function() {
             peer = null;
         }
         networkMode = 'offline';
+        let btnJoin = document.querySelector('button[onclick="joinGame()"]');
+        if (btnJoin) { btnJoin.innerText = "Join Game"; btnJoin.disabled = false; }
     });
 }
 
