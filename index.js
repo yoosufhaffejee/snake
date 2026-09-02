@@ -452,6 +452,10 @@ function drawGame(){
         pause();
     } else {
         txtPause.hidden = true;
+        if (!started && !gameOver && !GameOverText && aliveSnakes.length > 0) {
+            txtPause.innerText = "Waiting for all players to ready up...";
+            txtPause.hidden = false;
+        }
     }
 
     clearScreen();
