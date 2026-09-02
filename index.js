@@ -55,8 +55,23 @@ let allowMidGameJoin = false;
 
 let lives = 1;
 let gameOver=false;
-let playerCount = 0;
 let buttonMappings = [];
+
+function getActivePlayerCount() {
+    return mySnakeIndices.length + (networkMode === 'host' ? Object.keys(hostConnections).length : 0);
+}
+
+function getAvailableSnakeIndex() {
+    for (let i = 0; i < 8; i++) {
+        if (mySnakeIndices.includes(i)) continue;
+        let connected = false;
+        for (let p in hostConnections) {
+            if (hostConnections[p].snakeIndex === i) { connected = true; break; }
+        }
+        if (!connected) return i;
+    }
+    return -1;
+}
 
 canvas.width = canvasSize;
 canvas.height = canvasSize;
@@ -74,7 +89,7 @@ const allSnakes = [
     new snake("Player7", "#FFFDD0", "navy", 5, 15, [new snakePart(-5, -5)], 1, 0, 0, 0),
     new snake("Player8", "teal", "silver", 15, 15, [new snakePart(-5, -5)], 1, 0, 0, 0)
 ];
-
+allSnakes.forEach((s, i) => s.id = i);
 let clonedSnakes = structuredClone(allSnakes);
 let playerSnakes = [];
 let aliveSnakes = [];
@@ -103,15 +118,14 @@ function requestMobileFullscreen() {
 }
 
 function initPlayer1() {
-    if(playerCount > 0) return;
+    if(getActivePlayerCount() > 0) return;
     let p1 = clonedSnakes[0];
     p1.controls = [38, 40, 37, 39]; // Arrows
     p1.controls2 = [87, 83, 65, 68]; // WASD
-    playerSnakes.push(p1);
-    aliveSnakes.push(p1);
-    playerCount++;
-    mySnakeIndices.push(0);
-    if(playerCount === 1) WinningScore = 999;
+    if (!playerSnakes.includes(p1)) playerSnakes.push(p1);
+    if (!aliveSnakes.includes(p1)) aliveSnakes.push(p1);
+    if (!mySnakeIndices.includes(0)) mySnakeIndices.push(0);
+    if(getActivePlayerCount() <= 1) WinningScore = 999;
 }
 
 // Multiplayer Lobby Functions
@@ -140,7 +154,8 @@ window.startHost = function() {
     });
     
     peer.on('connection', conn => {
-        if(playerCount >= 8) {
+        let sIndex = getAvailableSnakeIndex();
+        if(sIndex === -1) {
             conn.on('open', () => {
                 conn.send({ type: 'error', message: 'Room full' });
                 setTimeout(() => conn.close(), 1000);
@@ -148,20 +163,24 @@ window.startHost = function() {
             return;
         }
         
-        let sIndex = playerCount;
-        let remoteSnake = clonedSnakes[playerCount];
+        let remoteSnake = clonedSnakes[sIndex];
+        // Clean up ghost state
+        remoteSnake.parts = [new snakePart(remoteSnake.headX, remoteSnake.headY)];
+        remoteSnake.tailLength = 1;
+        remoteSnake.score = 0;
         remoteSnake.controls = [-1, -1, -1, -1]; 
+        remoteSnake.xVelocity = 0;
+        remoteSnake.yVelocity = 0;
         
         let waiting = false;
         if (started && !allowMidGameJoin && !GameOverText) {
             waiting = true;
         } else {
-            playerSnakes.push(remoteSnake);
-            aliveSnakes.push(remoteSnake);
+            if (!playerSnakes.includes(remoteSnake)) playerSnakes.push(remoteSnake);
+            if (!aliveSnakes.includes(remoteSnake)) aliveSnakes.push(remoteSnake);
         }
-        playerCount++;
         
-        if(playerCount === 1) WinningScore = 999;
+        if(getActivePlayerCount() <= 1) WinningScore = 999;
         else WinningScore = parseInt(document.getElementById('inptWinScore').value);
         
         hostConnections[conn.peer] = { conn: conn, snakeIndex: sIndex, snake: remoteSnake, isWaiting: waiting };
@@ -204,6 +223,8 @@ window.startHost = function() {
                     });
                     aliveSnakes.splice(idx, 1);
                 }
+                let pIdx = playerSnakes.indexOf(s);
+                if(pIdx > -1) playerSnakes.splice(pIdx, 1);
                 delete hostConnections[conn.peer];
             }
         });
@@ -214,7 +235,13 @@ window.joinGame = function() {
     let roomId = document.getElementById('joinInput').value.trim().toUpperCase();
     if(!roomId) return;
     networkMode = 'client';
-    requestMobileFullscreen();
+    
+    requestMobileFullscreen(); // Must be called synchronously with user click
+    
+    if (peer) {
+        peer.destroy();
+    }
+    
     peer = new Peer();
     peer.on('open', () => {
         clientConn = peer.connect('SNAKE-' + roomId);
@@ -238,6 +265,18 @@ window.joinGame = function() {
             alert("Host disconnected. Please refresh to start a new game.");
             location.reload();
         });
+    });
+    peer.on('error', err => {
+        if (err.type === 'peer-unavailable') {
+            alert("Room not found! Please check the code and try again.");
+        } else {
+            alert("Connection error: " + err.type);
+        }
+        if (peer) {
+            peer.destroy();
+            peer = null;
+        }
+        networkMode = 'offline';
     });
 }
 
@@ -361,8 +400,8 @@ function reset()
 
 function generateScoreHTML(snakeList, myIndices) {
     let html = "";
-    snakeList.forEach((snake, index) => {
-        let isMe = myIndices.includes(index);
+    snakeList.forEach((snake) => {
+        let isMe = myIndices.includes(snake.id);
         let style = `background-color: ${snake.headCol};`;
         if (isMe) {
             style += ` border: 2px solid white; box-shadow: 0 0 10px rgba(255,255,255,0.5); transform: scale(1.05);`;
@@ -370,7 +409,7 @@ function generateScoreHTML(snakeList, myIndices) {
         let label = '';
         if (isMe) {
             label = (networkMode === 'host' || networkMode === 'offline') ? ' (Local)' : ' (You)';
-        } else if (networkMode === 'client' && index === 0) {
+        } else if (networkMode === 'client' && snake.id === 0) {
             label = ' (Host)';
         }
         html += `<div class="score-badge" style="${style}">${snake.name}${label}: ${snake.score}</div>`;
@@ -508,7 +547,7 @@ function isGameOver(){
             }
         });
 
-        if(snake.score >= WinningScore && playerCount > 1) {
+        if(snake.score >= WinningScore && getActivePlayerCount() > 1) {
             gameOver=true;
             if(isTouchDevice() && !window.touchRestartTimeout) {
                 window.touchRestartTimeout = setTimeout(x => { window.touchRestartTimeout=null; reset(); drawGame(); }, 5000);
@@ -530,7 +569,7 @@ function isGameOver(){
         }
     });
     
-    if (playerCount > 1 && started && aliveSnakes.length <= 1) {
+    if (getActivePlayerCount() > 1 && started && aliveSnakes.length <= 1) {
         gameOver = true;
         if(isTouchDevice() && !window.touchRestartTimeout) {
             window.touchRestartTimeout = setTimeout(x => { window.touchRestartTimeout=null; reset(); drawGame(); }, 5000);
@@ -548,7 +587,7 @@ function CheckBodyColission(snake)
     for(let i=0; i<snake.parts.length;i++){
         let part=snake.parts[i];
         if(part.x===snake.headX && part.y===snake.headY){
-            if(playerCount === 1) {
+            if(getActivePlayerCount() <= 1) {
                 gameOver=true;
                 if(isTouchDevice() && !window.touchRestartTimeout) {
                     window.touchRestartTimeout = setTimeout(x => { window.touchRestartTimeout=null; reset(); drawGame(); }, 5000);
@@ -566,11 +605,11 @@ function CheckBodyColission(snake)
 
 window.addSnake = function()
 {
-    if(playerCount >= 8) {
+    if(getAvailableSnakeIndex() === -1) {
         alert("Max players allowed is 8");
     } else if(started === false && GameOverText === false) {
         isPaused = true;
-        modalText.textContent = clonedSnakes[playerCount].name + ": Tap key to bind 'Move Up'";
+        modalText.textContent = clonedSnakes[getAvailableSnakeIndex()].name + ": Tap key to bind 'Move Up'";
         modal.style.display = "block";
     }
 }
@@ -673,7 +712,7 @@ function wallCollision(snake, toRemove)
     else if(snake.headY===tileCount) dead = true;
 
     if (dead) {
-        if(playerCount === 1) {
+        if(getActivePlayerCount() <= 1) {
             gameOver=true;
             if(isTouchDevice() && !window.touchRestartTimeout) {
                 window.touchRestartTimeout = setTimeout(x => { window.touchRestartTimeout=null; reset(); drawGame(); }, 5000);
@@ -709,17 +748,15 @@ function drawSnakes(){
             ctx.fillRect(part.x *gridSpacing, part.y *gridSpacing, tileSize,tileSize);
         }
         
-        if (started) {
-            snake.parts.push(new snakePart(snake.headX,snake.headY));
-            if(snake.parts.length>snake.tailLength){
-                snake.parts.shift();
-            }
+        snake.parts.push(new snakePart(snake.headX,snake.headY));
+        if(snake.parts.length>snake.tailLength){
+            snake.parts.shift();
         }
     
         ctx.fillStyle=snake.headCol;
         ctx.fillRect(snake.headX* gridSpacing,snake.headY* gridSpacing, tileSize,tileSize);
         
-        if (started) moveSnake(snake);
+        moveSnake(snake);
     });
 }
  
@@ -728,7 +765,7 @@ function moveSnake(snake){
     snake.lastYVelocity = snake.yVelocity;
     snake.headX += snake.xVelocity;
     snake.headY += snake.yVelocity;
-    if(solidWalls==false) {
+    if(solidWalls==false || !started) {
         wallTeleport(snake);
     }
 }
@@ -773,6 +810,7 @@ function randomPosition() {
 }
 
 function checkCollision(){
+    if (!started) return;
     aliveSnakes.forEach(snake => {
         for(let i = apples.length - 1; i >= 0; i--) {
             let apple = apples[i];
