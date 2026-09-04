@@ -193,8 +193,9 @@ canvas.solid-walls {
   border-radius: 3px;
 }
 .game-over-score-row {
-  transition: transform 0.15s ease;
+  transition: all 0.2s ease;
 }
 .game-over-score-row:hover {
-  transform: scale(1.02);
+  transform: translateY(-2px);
+  filter: brightness(1.2);
 }

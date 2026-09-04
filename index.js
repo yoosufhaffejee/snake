@@ -949,8 +949,10 @@ function displayGameOverText(liveSnks, allSnks)
             msgEl.innerText = msg;
             if (winner && winner.headCol) {
                 msgEl.style.color = winner.headCol;
+                msgEl.style.textShadow = `0 0 10px color-mix(in srgb, ${winner.headCol} 60%, transparent), 1px 1px 2px #000`;
             } else {
                 msgEl.style.color = '#ffffff';
+                msgEl.style.textShadow = '1px 1px 2px #000';
             }
         }
 
@@ -984,7 +986,7 @@ function displayGameOverText(liveSnks, allSnks)
 
             let html = "";
             if (marginText) {
-                html += `<div style="color: #ccc; font-size: 14px; margin-bottom: 12px; font-weight: 500;">${marginText}</div>`;
+                html += `<div style="color: #ddd; font-size: 14px; margin-bottom: 15px; font-weight: 600; text-align: center; letter-spacing: 0.5px; text-transform: uppercase;">${marginText}</div>`;
             }
 
             html += `<div style="display: flex; flex-direction: column; gap: 8px;">`;
@@ -993,18 +995,18 @@ function displayGameOverText(liveSnks, allSnks)
                 let isWinner = (winner && snake === winner);
                 let headColor = snake.headCol || '#ff9800';
                 let borderStyle = isWinner 
-                    ? `border: 2px solid ${headColor}; box-shadow: 0 0 10px ${headColor}66; background: rgba(255, 255, 255, 0.12);` 
+                    ? `border: 2px solid ${headColor}; box-shadow: 0 0 12px color-mix(in srgb, ${headColor} 40%, transparent); background: rgba(255, 255, 255, 0.12);` 
                     : `border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.05);`;
 
                 let winnerBadge = isWinner 
-                    ? `<span style="background: ${headColor}33; color: ${headColor}; border: 1px solid ${headColor}88; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 6px;">👑 WINNER</span>` 
+                    ? `<span style="background: color-mix(in srgb, ${headColor} 20%, transparent); color: ${headColor}; border: 1px solid color-mix(in srgb, ${headColor} 50%, transparent); font-size: 12px; padding: 3px 8px; border-radius: 6px; font-weight: bold; margin-left: 8px;">👑 WINNER</span>` 
                     : '';
 
                 html += `
-                <div class="game-over-score-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 8px; ${borderStyle}">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="width: 14px; height: 14px; border-radius: 3px; background-color: ${headColor}; display: inline-block; border: 1px solid rgba(0,0,0,0.5); flex-shrink: 0;"></span>
-                        <span style="font-weight: bold; font-size: 15px; color: ${isWinner ? headColor : '#fff'}; text-shadow: 1px 1px 2px #000;">${snake.name}</span>
+                <div class="game-over-score-row" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: 8px; ${borderStyle}">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="width: 16px; height: 16px; border-radius: 4px; background-color: ${headColor}; display: inline-block; border: 1px solid rgba(0,0,0,0.5); flex-shrink: 0;"></span>
+                        <span style="font-weight: bold; font-size: 16px; color: ${isWinner ? headColor : '#fff'}; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">${snake.name}</span>
                         ${winnerBadge}
                     </div>
                     <div style="display: flex; align-items: baseline; gap: 4px;">
