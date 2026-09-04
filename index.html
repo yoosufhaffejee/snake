@@ -56,7 +56,9 @@
     <div id="gameOverModal" class="modal" style="z-index: 30;">
         <div class="modal-content" style="text-align: center; background-color: rgba(30, 30, 30, 0.95); border: 2px solid #444; border-radius: 15px;">
             <h1 id="gameOverTitle" style="color: white; font-size: 40px; margin-bottom: 10px; text-shadow: 2px 2px 4px #000;">Game Over!</h1>
-            <h2 id="gameOverMessage" style="color: #ff9800; font-size: 28px; margin-bottom: 25px; text-shadow: 1px 1px 2px #000;">Player 1 Wins!</h2>
+            <h2 id="gameOverMessage" style="color: #ff9800; font-size: 28px; margin-bottom: 15px; text-shadow: 1px 1px 2px #000;">Player 1 Wins!</h2>
+            <div id="gameOverScores" class="game-over-scores"></div>
+            <div id="gameOverWaiting" style="color: #aaa; font-size: 14px; margin-bottom: 15px; display: none;">(Waiting for Host to Restart)</div>
             <button id="btnRestart" class="btn" style="width:100%; background-color: #4CAF50; font-size: 20px; padding: 12px;" onclick="handleRestart()">Play Again</button>
         </div>
     </div>

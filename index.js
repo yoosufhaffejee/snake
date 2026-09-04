@@ -532,6 +532,10 @@ function reset()
     AppleInitialized = false;
     GameOverText = false;
     document.getElementById('gameOverModal').style.display = 'none';
+    let scoresEl = document.getElementById('gameOverScores');
+    if (scoresEl) scoresEl.innerHTML = '';
+    let waitingEl = document.getElementById('gameOverWaiting');
+    if (waitingEl) waitingEl.style.display = 'none';
     clonedSnakes = structuredClone(allSnakes);
 
     // Restore Player 1 controls
@@ -750,8 +754,6 @@ function isGameOver(){
             }
 
             if((headCollision || passedThrough) && started) {
-                if(aliveSnakes.length <= 2) displayGameOverText(aliveSnakes, playerSnakes);
-
                 if (snake.score > otherSnake.score) toRemove.push(otherSnake);
                 else if(snake.score < otherSnake.score) toRemove.push(snake);
                 else { toRemove.push(otherSnake); toRemove.push(snake); }
@@ -895,43 +897,140 @@ function setControls(e)
 function displayGameOverText(liveSnks, allSnks)
 {
     GameOverText = true;
+    liveSnks = liveSnks || [];
+    allSnks = allSnks || playerSnakes || [];
+
+    let titleEl = document.getElementById('gameOverTitle');
+    let msgEl = document.getElementById('gameOverMessage');
+    let scoresEl = document.getElementById('gameOverScores');
+    let waitingEl = document.getElementById('gameOverWaiting');
+    let btnRestart = document.getElementById('btnRestart');
+    let modalEl = document.getElementById('gameOverModal');
+
+    if (titleEl) titleEl.innerText = 'Game Over!';
+
+    let winner = null;
     let msg = "";
 
-    if(allSnks.length === 1) {
-        msg = "Score: " + (liveSnks[0] ? liveSnks[0].score : 0);
-    } else if(liveSnks.length === 1) {
-        msg = liveSnks[0].name + " Wins!";
+    if (allSnks.length <= 1) {
+        // Single player mode
+        let p = allSnks[0] || liveSnks[0];
+        let score = p ? p.score : 0;
+        msg = "Score: " + score;
+        winner = p;
+        if (msgEl) {
+            msgEl.innerText = msg;
+            msgEl.style.color = (winner && winner.headCol) ? winner.headCol : '#ff9800';
+        }
+        if (scoresEl) scoresEl.innerHTML = '';
     } else {
-        let winner;
-        let highestScore = -Infinity;
-        let count = 0;
-        
-        liveSnks.forEach(snake => {
-            if(snake.score !== count) count++;
-        });
-
-        if(count < 1) {
-            msg = "Draw!";
+        // Multiplayer mode (Local or Online)
+        if (liveSnks.length === 1) {
+            winner = liveSnks[0];
+            msg = winner.name + " Wins!";
         } else {
-            liveSnks.forEach(snake => {
-                if(snake.score >= highestScore) {
-                    highestScore = snake.score;
-                    winner = snake;
-                }
+            // Either multiple snakes are alive (e.g. score cap reached) or all died
+            let candidates = liveSnks.length > 0 ? liveSnks : allSnks;
+            let highestScore = -Infinity;
+            candidates.forEach(s => {
+                if (s.score > highestScore) highestScore = s.score;
             });
-            msg = (winner ? winner.name : "Nobody") + " Wins!";
+            let topScorers = candidates.filter(s => s.score === highestScore);
+            if (topScorers.length === 1) {
+                winner = topScorers[0];
+                msg = winner.name + " Wins!";
+            } else {
+                winner = null;
+                msg = "Draw!";
+            }
+        }
+
+        if (msgEl) {
+            msgEl.innerText = msg;
+            if (winner && winner.headCol) {
+                msgEl.style.color = winner.headCol;
+            } else {
+                msgEl.style.color = '#ffffff';
+            }
+        }
+
+        // Render final scores breakdown
+        if (scoresEl) {
+            let sortedSnakes = [...allSnks];
+            if (winner) {
+                sortedSnakes.sort((a, b) => {
+                    if (a === winner) return -1;
+                    if (b === winner) return 1;
+                    return b.score - a.score;
+                });
+            } else {
+                sortedSnakes.sort((a, b) => b.score - a.score);
+            }
+
+            let marginText = "";
+            let runnerUp = allSnks.filter(s => s !== winner).sort((a, b) => b.score - a.score)[0];
+            if (winner && runnerUp) {
+                let diff = winner.score - runnerUp.score;
+                if (diff > 0) {
+                    marginText = `Won by ${diff} ${diff === 1 ? 'point' : 'points'}!`;
+                } else if (diff === 0) {
+                    marginText = `Won by last snake standing (tied at ${winner.score} pts)!`;
+                } else {
+                    marginText = `Won by survival!`;
+                }
+            } else if (!winner && sortedSnakes.length > 1 && sortedSnakes[0].score === sortedSnakes[1].score) {
+                marginText = `Tied with ${sortedSnakes[0].score} points each!`;
+            }
+
+            let html = "";
+            if (marginText) {
+                html += `<div style="color: #ccc; font-size: 14px; margin-bottom: 12px; font-weight: 500;">${marginText}</div>`;
+            }
+
+            html += `<div style="display: flex; flex-direction: column; gap: 8px;">`;
+
+            sortedSnakes.forEach(snake => {
+                let isWinner = (winner && snake === winner);
+                let headColor = snake.headCol || '#ff9800';
+                let borderStyle = isWinner 
+                    ? `border: 2px solid ${headColor}; box-shadow: 0 0 10px ${headColor}66; background: rgba(255, 255, 255, 0.12);` 
+                    : `border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.05);`;
+
+                let winnerBadge = isWinner 
+                    ? `<span style="background: ${headColor}33; color: ${headColor}; border: 1px solid ${headColor}88; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 6px;">👑 WINNER</span>` 
+                    : '';
+
+                html += `
+                <div class="game-over-score-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 8px; ${borderStyle}">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="width: 14px; height: 14px; border-radius: 3px; background-color: ${headColor}; display: inline-block; border: 1px solid rgba(0,0,0,0.5); flex-shrink: 0;"></span>
+                        <span style="font-weight: bold; font-size: 15px; color: ${isWinner ? headColor : '#fff'}; text-shadow: 1px 1px 2px #000;">${snake.name}</span>
+                        ${winnerBadge}
+                    </div>
+                    <div style="display: flex; align-items: baseline; gap: 4px;">
+                        <span style="font-size: 18px; font-weight: bold; color: #fff; text-shadow: 1px 1px 2px #000;">${snake.score}</span>
+                        <span style="font-size: 12px; color: #aaa;">pts</span>
+                    </div>
+                </div>`;
+            });
+
+            html += `</div>`;
+            scoresEl.innerHTML = html;
         }
     }
     
-    document.getElementById('gameOverTitle').innerText = 'Game Over!';
-    document.getElementById('gameOverMessage').innerText = msg;
-    document.getElementById('gameOverModal').style.display = 'block';
+    if (modalEl) modalEl.style.display = 'block';
     
     if (networkMode === 'client') {
-        document.getElementById('btnRestart').style.display = 'none';
-        document.getElementById('gameOverMessage').innerText += "\n\n(Waiting for Host to Restart)";
+        if (btnRestart) btnRestart.style.display = 'none';
+        if (waitingEl) {
+            waitingEl.style.display = 'block';
+        } else if (msgEl) {
+            msgEl.innerText += "\n\n(Waiting for Host to Restart)";
+        }
     } else {
-        document.getElementById('btnRestart').style.display = 'block';
+        if (btnRestart) btnRestart.style.display = 'block';
+        if (waitingEl) waitingEl.style.display = 'none';
     }
 }
 

@@ -177,3 +177,24 @@ canvas.solid-walls {
   border: 6px solid #666 !important;
   box-shadow: 0px 10px 30px rgba(0,0,0,0.9) !important;
 }
+
+/* Game Over Modal styling */
+.game-over-scores {
+  margin: 15px 0 20px 0;
+  max-height: 220px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.game-over-scores::-webkit-scrollbar {
+  width: 6px;
+}
+.game-over-scores::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 3px;
+}
+.game-over-score-row {
+  transition: transform 0.15s ease;
+}
+.game-over-score-row:hover {
+  transform: scale(1.02);
+}
